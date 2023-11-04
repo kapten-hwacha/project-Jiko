@@ -1,36 +1,31 @@
 import numpy
 import pygame
 
-ruudud = 50  # küljepikkus pikslites
-ruudu_suurus = 32
+"""
+TODO juurde
+- level design
+- scaling
+
+TODO parandada
+- hüppamise spam
+- collison window'i äärtega
+
+"""
+
+ruudud = 16  # küljepikkus pikslites
+ruudu_suurus = 128
 pikkus = ruudud * ruudu_suurus
 laius = pikkus
 lahutusvõime = (pikkus, laius)
 
 
-class Player():
-    global window
-
-    def __init__(self, asukoht):
-        img = pygame.image.load("")
-        self.img = pygame.transform.scale(img, (ruudu_suurus, 2 * ruudu_suurus))
-        self.rect = self.img.get_rect()
-        self.rect.x = asukoht[0]
-        self.rect.y = asukoht[1]
-
-    def uuenda(self):
-        # joonistab mängija ekraanile
-        window.blit(self.img, self.rect)
-        
-
-
 class World():
-
     # ruutude piltide ja väärtuste jaoks dictionary
+    # vb peaks lahenduse üle vaatama, aga prg töötab
     pildid = {
-        1: ""
-        # 2: ""
-        # 3: ""
+        1: "",
+        2: "",
+        3: ""
     }
 
     def lisa_pilt(tüüp, rea_lugeja, veeru_lugeja):
@@ -58,9 +53,7 @@ class World():
         for rida in maatriks:
             veeru_lugeja = 0
             for ruut in rida:
-                if ruut == 0:
-                    continue
-                else:
+                if ruut != 0:
                     ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
                     self.ruudud_list.append(ruut)
                 veeru_lugeja += 1
@@ -74,7 +67,68 @@ class World():
 
 
 class Player():
-    pass
+    global window, lahutusvõime, world
+
+    def __init__(self, asukoht):
+        img = pygame.image.load("player.png")
+        self.img_parem = pygame.transform.scale(img, (ruudu_suurus, ruudu_suurus * 2))
+        self.img_vasak = pygame.transform.flip(self.img_parem, True, False)  # flipib pildi ümber y-telje
+        self.rect = self.img_parem.get_rect()
+        self.rect.x = asukoht[0]
+        self.rect.y = asukoht[1]
+        laius = self.img_parem.get_width()
+        pikkus = self.img_vasak.get_height()
+        self.suurus = (laius, pikkus)
+        self.kiirus_y = 0
+        self.suund = 0
+
+    def uuenda(self):
+        dx = 0
+        dy = 0
+
+        key = pygame.key.get_pressed()
+        if (key[pygame.K_w] or key[pygame.K_SPACE]) and self.hüpe is False:
+            self.kiirus_y = -20
+            self.hüpe = True
+        if key[pygame.K_w] is False and key[pygame.K_SPACE] is False:
+            self.hüpe = False
+        if key[pygame.K_a]:
+            dx -= 10
+            self.suund = -1
+        if key[pygame.K_d]:
+            dx += 10
+            self.suund = 1
+
+        self.kiirus_y += 1
+        if self.kiirus_y > 10:
+            self.vel_y = 10
+        dy += self.kiirus_y
+
+        # collision detect
+        for ruut in world.ruudud_list:
+            if ruut[1].colliderect(self.rect.x + dx, self.rect.y, self.suurus[0], self.suurus[1]):
+                dx = 0
+            if ruut[1].colliderect(self.rect.x, self.rect.y + dy, self.suurus[0], self.suurus[1]):
+                # kui collision tekib hüppamisel
+                if self.kiirus_y < 0:
+                    dy = ruut[1].bottom - self.rect.top
+                    self.kiirus_y = 0
+                # kui collision tekib kukkumisel
+                else:
+                    dy = ruut[1].top - self.rect.bottom
+                    self.kiirus_y = 0
+
+        # uuendab mängija koordinaate
+        self.rect.x += dx
+        self.rect.y += dy
+
+        # joonistab mängija ekraanile
+        if self.suund == 1:
+            img = self.img_parem
+        else:
+            img = self.img_vasak
+        window.blit(img, self.rect)
+        pygame.draw.rect(window, (0, 255, 0 ), self.rect, 2)
 
 
 # joonistab ruudustiku välja
@@ -87,17 +141,8 @@ def ruudustik():
                          (lahutusvõime[0], i * ruudu_suurus))
 
 
-"""
-TODO
-
-- scaling
-
-
-"""
-
-
 def main():
-    global window, lahutusvõime
+    global window, lahutusvõime, world
     pygame.init()
 
     FPS = 60  # et programm töötaks olenemata riistvarast samasuguselt
@@ -106,17 +151,19 @@ def main():
     window = pygame.display.set_mode(lahutusvõime)
     pygame.display.set_caption(nimi)
 
+    # laeb tausta
+    taust = pygame.image.load("background.png")
+    taust = pygame.transform.scale(taust, lahutusvõime)
+
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
     world_maatriks = numpy.zeros((ruudud, ruudud))
-    world_maatriks[20] = 1  # testimiseks
+    world_maatriks[10] = 1  # testimiseks
+    world_maatriks[15] = 1
+    world_maatriks[13:15, 5] = 1
     world = World(world_maatriks)
-    print(world.ruudud_list)
 
-    # laeb spritide pildid
-    taust = pygame.image.load("background.png")
-    taust = pygame.transform.scale(taust, lahutusvõime)
-    # man = pygame.image.load("whiteman.jpg")
+    player = Player((ruudu_suurus, lahutusvõime[0] - ruudu_suurus))
 
     fpsKell = pygame.time.Clock()  # loob objekti aja jälgimiseks
     run = True
@@ -130,6 +177,7 @@ def main():
         ruudustik()  # loob ruudusitku
 
         World.joonista(world)  # joonistab tekstuuriga ruudud ekraanile
+        Player.uuenda(player)
 
         for event in pygame.event.get():
             if event.type is pygame.QUIT:
