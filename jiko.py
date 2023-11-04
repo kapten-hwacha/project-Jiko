@@ -8,11 +8,27 @@ laius = pikkus
 lahutusvõime = (pikkus, laius)
 
 
+class Player():
+    global window
+
+    def __init__(self, asukoht):
+        img = pygame.image.load("")
+        self.img = pygame.transform.scale(img, (ruudu_suurus, 2 * ruudu_suurus))
+        self.rect = self.img.get_rect()
+        self.rect.x = asukoht[0]
+        self.rect.y = asukoht[1]
+
+    def uuenda(self):
+        # joonistab mängija ekraanile
+        window.blit(self.img, self.rect)
+        
+
+
 class World():
 
     # ruutude piltide ja väärtuste jaoks dictionary
     pildid = {
-        1: pygame.image.load("tekstuur.jpg")
+        1: ""
         # 2: ""
         # 3: ""
     }
@@ -30,7 +46,8 @@ class World():
 
     def __init__(self, maatriks):
         self.ruudud_list = []
-        # tekstuur1 = 
+        tekstuur1 = pygame.image.load("tekstuur.jpg")
+        World.pildid[1] = tekstuur1
         """
         tekstuur2 = pygame.image.load()
         ...
@@ -50,7 +67,7 @@ class World():
             rea_lugeja += 1
         pass
 
-    def draw(self):
+    def joonista(self):
         for ruut in self.ruudud_list:
             window.blit(ruut[0], ruut[1])
         pass
@@ -111,6 +128,8 @@ def main():
         # window.blit(man, (0, 600))
 
         ruudustik()  # loob ruudusitku
+
+        World.joonista(world)  # joonistab tekstuuriga ruudud ekraanile
 
         for event in pygame.event.get():
             if event.type is pygame.QUIT:
