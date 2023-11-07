@@ -12,8 +12,8 @@ TODO parandada
 
 """
 
-ruudud = 16  # küljepikkus pikslites
-ruudu_suurus = 128
+ruudud = 16  # kui mitmeks ruuduks jagame
+ruudu_suurus = 50 # küljepikkus pikslites
 pikkus = ruudud * ruudu_suurus
 laius = pikkus
 lahutusvõime = (pikkus, laius)
@@ -158,12 +158,14 @@ def main():
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
     world_maatriks = numpy.zeros((ruudud, ruudud))
-    world_maatriks[10] = 1  # testimiseks
+    world_maatriks[0] = 1  # testimiseks
     world_maatriks[15] = 1
-    world_maatriks[13:15, 5] = 1
+    world_maatriks[6, 1:4] = 1
+    world_maatriks[1:15, 0] = 1
+    world_maatriks[1:15, 15] = 1
     world = World(world_maatriks)
 
-    player = Player((ruudu_suurus, lahutusvõime[0] - ruudu_suurus))
+    player = Player((ruudu_suurus*2, lahutusvõime[0] - (ruudu_suurus*10)))
 
     fpsKell = pygame.time.Clock()  # loob objekti aja jälgimiseks
     run = True
@@ -180,8 +182,10 @@ def main():
         Player.uuenda(player)
 
         for event in pygame.event.get():
-            if event.type is pygame.QUIT:
-                run = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_x:
+                    run = False
+                
 
         pygame.display.update()  # värksendab aknas kuvatavat frame'i
 
