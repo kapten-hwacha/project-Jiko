@@ -58,12 +58,11 @@ class World():
                     self.ruudud_list.append(ruut)
                 veeru_lugeja += 1
             rea_lugeja += 1
-        pass
+        print(self.ruudud_list[0][1].y)
 
     def joonista(self):
         for ruut in self.ruudud_list:
             window.blit(ruut[0], ruut[1])
-        pass
 
 
 class Player():
@@ -90,8 +89,12 @@ class Player():
         if (key[pygame.K_w] or key[pygame.K_SPACE]) and self.hüpe is False:
             self.kiirus_y = -20
             self.hüpe = True
+        # lisasin self.hüpe muutmise collision detecti alla,
+        # nüüd ei saa hüppamist spammida
+        """
         if key[pygame.K_w] is False and key[pygame.K_SPACE] is False:
             self.hüpe = False
+        """
         if key[pygame.K_a]:
             dx -= 10
             self.suund = -1
@@ -100,8 +103,9 @@ class Player():
             self.suund = 1
 
         self.kiirus_y += 1
-        if self.kiirus_y > 10:
-            self.vel_y = 10
+        # kukkumisel on max kiirus
+        if self.kiirus_y > 30:
+            self.kiirus_y = 30
         dy += self.kiirus_y
 
         # collision detect
@@ -117,6 +121,15 @@ class Player():
                 else:
                     dy = ruut[1].top - self.rect.bottom
                     self.kiirus_y = 0
+                    self.hüpe = False
+
+        # ei kuku frame'ist välja
+        if self.rect.x < 0:
+            self.rect.x = 0
+        elif self.rect.x > lahutusvõime[0] - ruudu_suurus:
+            self.rect.x = lahutusvõime[0] - ruudu_suurus
+        if self.rect.y < 0:
+            self.rect.y = 0
 
         # uuendab mängija koordinaate
         self.rect.x += dx
@@ -158,9 +171,9 @@ def main():
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
     world_maatriks = numpy.zeros((ruudud, ruudud))
-    world_maatriks[10] = 1  # testimiseks
+    # world_maatriks[10] = 1  # testimiseks
     world_maatriks[15] = 1
-    world_maatriks[13:15, 5] = 1
+    world_maatriks[14:15, 5] = 1
     world = World(world_maatriks)
 
     player = Player((ruudu_suurus, lahutusvõime[0] - ruudu_suurus))
@@ -172,8 +185,6 @@ def main():
         # lisab pildi aknas kuvatavale frame'ile
         # järjekord oluline !
         window.blit(taust, (0, 0))
-        # window.blit(man, (0, 600))
-
         ruudustik()  # loob ruudusitku
 
         World.joonista(world)  # joonistab tekstuuriga ruudud ekraanile
