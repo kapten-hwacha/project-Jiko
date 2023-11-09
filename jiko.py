@@ -13,10 +13,12 @@ TODO parandada
 """
 
 ruudud = 16  # kui mitmeks ruuduks jagame
-ruudu_suurus = 50 # küljepikkus pikslites
+ruudu_suurus = 40 # küljepikkus pikslites
 pikkus = ruudud * ruudu_suurus
 laius = pikkus
 lahutusvõime = (pikkus, laius)
+sammud_loendur=0
+on_maas=False
 
 
 class World():
@@ -70,9 +72,15 @@ class Player():
     global window, lahutusvõime, world
 
     def __init__(self, asukoht):
-        img = pygame.image.load("player.png")
+        img = pygame.image.load("seisab.png")
+        img1 = pygame.image.load("samm1.png")
+        img2 = pygame.image.load("samm2.png")
         self.img_parem = pygame.transform.scale(img, (ruudu_suurus, ruudu_suurus * 2))
         self.img_vasak = pygame.transform.flip(self.img_parem, True, False)  # flipib pildi ümber y-telje
+        self.img_samm_parem = pygame.transform.scale(img1, (ruudu_suurus, ruudu_suurus * 2))
+        self.img_samm_vasak = pygame.transform.flip(self.img_samm_parem, True, False)
+        self.img_samm_parem2 = pygame.transform.scale(img2, (ruudu_suurus, ruudu_suurus * 2))
+        self.img_samm_vasak2 = pygame.transform.flip(self.img_samm_parem2, True, False)
         self.rect = self.img_parem.get_rect()
         self.rect.x = asukoht[0]
         self.rect.y = asukoht[1]
@@ -81,23 +89,34 @@ class Player():
         self.suurus = (laius, pikkus)
         self.kiirus_y = 0
         self.suund = 0
+        
+     
 
     def uuenda(self):
+        global sammud_loendur, on_maas
+        
+        sammud_frames_parem=[self.img_samm_parem, self.img_samm_parem, self.img_samm_parem,self.img_samm_parem, self.img_samm_parem, self.img_samm_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem]
+        sammud_frames_vasak=[self.img_samm_vasak, self.img_samm_vasak, self.img_samm_vasak,self.img_samm_vasak, self.img_samm_vasak, self.img_samm_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak]
         dx = 0
         dy = 0
+        liikumine=False
+        
 
         key = pygame.key.get_pressed()
-        if (key[pygame.K_w] or key[pygame.K_SPACE]) and self.hüpe is False:
+        if (key[pygame.K_w] or key[pygame.K_SPACE]) and self.hüpe is False and on_maas is True:
             self.kiirus_y = -20
             self.hüpe = True
+            on_maas=False
         if key[pygame.K_w] is False and key[pygame.K_SPACE] is False:
             self.hüpe = False
         if key[pygame.K_a]:
             dx -= 10
             self.suund = -1
+            liikumine=True 
         if key[pygame.K_d]:
             dx += 10
             self.suund = 1
+            liikumine=True
 
         self.kiirus_y += 1
         if self.kiirus_y > 10:
@@ -117,6 +136,8 @@ class Player():
                 else:
                     dy = ruut[1].top - self.rect.bottom
                     self.kiirus_y = 0
+                    on_maas=True
+                
 
         # uuendab mängija koordinaate
         self.rect.x += dx
@@ -125,8 +146,18 @@ class Player():
         # joonistab mängija ekraanile
         if self.suund == 1:
             img = self.img_parem
+            if liikumine==True :
+                if sammud_loendur==23:
+                    sammud_loendur=0
+                img = sammud_frames_parem[sammud_loendur]
+                sammud_loendur+=1
         else:
             img = self.img_vasak
+            if liikumine==True :
+                if sammud_loendur==23:
+                    sammud_loendur=0
+                img = sammud_frames_vasak[sammud_loendur]
+                sammud_loendur+=1
         window.blit(img, self.rect)
         pygame.draw.rect(window, (0, 255, 0 ), self.rect, 2)
 
