@@ -7,16 +7,17 @@ TODO juurde
 - scaling
 
 TODO parandada
-- hüppamise spam
 - collison window'i äärtega
 
 """
 
-ruudud = 16  # kui mitmeks ruuduks jagame
-ruudu_suurus = 40 # küljepikkus pikslites
+ruudud = 18  # kui mitmeks ruuduks jagame
+ruudu_suurus = 30 # küljepikkus pikslites
 pikkus = ruudud * ruudu_suurus
 laius = pikkus
 lahutusvõime = (pikkus, laius)
+lahutusvõime2 = (laius+500, pikkus+100)
+
 sammud_loendur=0
 on_maas=False
 
@@ -44,7 +45,9 @@ class World():
     def __init__(self, maatriks):
         self.ruudud_list = []
         tekstuur1 = pygame.image.load("tekstuur.jpg")
+        tekstuur2 = pygame.image.load("tekstuur1.jpg")
         World.pildid[1] = tekstuur1
+        World.pildid[2] = tekstuur2
         """
         tekstuur2 = pygame.image.load()
         ...
@@ -179,7 +182,7 @@ def main():
     FPS = 60  # et programm töötaks olenemata riistvarast samasuguselt
     nimi = "Jiko"
 
-    window = pygame.display.set_mode(lahutusvõime)
+    window = pygame.display.set_mode(lahutusvõime2)
     pygame.display.set_caption(nimi)
 
     # laeb tausta
@@ -194,6 +197,7 @@ def main():
     world_maatriks[6, 1:4] = 1
     world_maatriks[1:15, 0] = 1
     world_maatriks[1:15, 15] = 1
+    world_maatriks[10, 10] = 2
     world = World(world_maatriks)
 
     player = Player((ruudu_suurus*2, lahutusvõime[0] - (ruudu_suurus*10)))
@@ -223,6 +227,9 @@ def main():
         # pärast määrata muutuja väärtuseks, et liikumine toimuks ühtselt?
         fpsKell.tick(FPS)  # uuendab 'kella' väärtust
 
+    mapfail=open("map.txt", "w")
+    mapfail.write(str(world_maatriks))
+    mapfail.close()
     pygame.quit()
 
 
