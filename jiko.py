@@ -11,12 +11,15 @@ TODO parandada
 
 """
 
-ruudud = 18  # kui mitmeks ruuduks jagame
+ruudud = 40  # kui mitmeks ruuduks jagame
 ruudu_suurus = 30 # küljepikkus pikslites
 pikkus = ruudud * ruudu_suurus
 laius = pikkus
 lahutusvõime = (pikkus, laius)
-lahutusvõime2 = (laius+500, pikkus+100)
+lahutusvõime2 = (laius-ruudu_suurus*30, pikkus-ruudu_suurus*30)
+#lahutusvõime2=(laius, pikkus)
+blitx=0-ruudu_suurus*16
+blity=0-ruudu_suurus*26
 
 sammud_loendur=0
 on_maas=False
@@ -64,11 +67,12 @@ class World():
                 veeru_lugeja += 1
             rea_lugeja += 1
         pass
-
+        
     def joonista(self):
         for ruut in self.ruudud_list:
-            window.blit(ruut[0], ruut[1])
+            window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
         pass
+        
 
 
 class Player():
@@ -96,7 +100,7 @@ class Player():
      
 
     def uuenda(self):
-        global sammud_loendur, on_maas
+        global sammud_loendur, on_maas, blitx, blity
         
         sammud_frames_parem=[self.img_samm_parem, self.img_samm_parem, self.img_samm_parem,self.img_samm_parem, self.img_samm_parem, self.img_samm_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem]
         sammud_frames_vasak=[self.img_samm_vasak, self.img_samm_vasak, self.img_samm_vasak,self.img_samm_vasak, self.img_samm_vasak, self.img_samm_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak]
@@ -145,6 +149,8 @@ class Player():
         # uuendab mängija koordinaate
         self.rect.x += dx
         self.rect.y += dy
+        blitx = blitx -dx  
+        blity = blity -dy
 
         # joonistab mängija ekraanile
         if self.suund == 1:
@@ -161,8 +167,9 @@ class Player():
                     sammud_loendur=0
                 img = sammud_frames_vasak[sammud_loendur]
                 sammud_loendur+=1
-        window.blit(img, self.rect)
-        pygame.draw.rect(window, (0, 255, 0 ), self.rect, 2)
+                
+        window.blit(img, (self.rect[0]+blitx, self.rect[1]+blity))
+        #pygame.draw.rect(window, (0, 255, 0 ), self.rect, 2)
 
 
 # joonistab ruudustiku välja
@@ -192,15 +199,15 @@ def main():
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
     world_maatriks = numpy.zeros((ruudud, ruudud))
-    world_maatriks[0] = 1  # testimiseks
-    world_maatriks[15] = 1
-    world_maatriks[6, 1:4] = 1
-    world_maatriks[1:15, 0] = 1
-    world_maatriks[1:15, 15] = 1
-    world_maatriks[10, 10] = 2
+    world_maatriks[0:3] = 1  # testimiseks
+    world_maatriks[1:39, 0:3] = 1
+    world_maatriks[1:39, 36:40] = 1
+    world_maatriks[36:40] = 2
+    world_maatriks[32:33, 3:33] = 2
+    world_maatriks[28:29, 6:36] = 2
     world = World(world_maatriks)
 
-    player = Player((ruudu_suurus*2, lahutusvõime[0] - (ruudu_suurus*10)))
+    player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*10)))
 
     fpsKell = pygame.time.Clock()  # loob objekti aja jälgimiseks
     run = True
@@ -208,7 +215,7 @@ def main():
 
         # lisab pildi aknas kuvatavale frame'ile
         # järjekord oluline !
-        window.blit(taust, (0, 0))
+        window.blit(taust, (0+blitx, 0+blity))
         # window.blit(man, (0, 600))
 
         ruudustik()  # loob ruudusitku
