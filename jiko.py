@@ -84,6 +84,7 @@ class World():
         for objekt in self.objektid_list:
             window.blit(objekt[0], (objekt[1][0] + blitx, objekt[1][1] + blity))
 
+
 class Player():
     global window, lahutusvõime, world
 
