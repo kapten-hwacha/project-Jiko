@@ -1,6 +1,7 @@
 import numpy
 import pygame
-from random import randint as rng
+# from random import randint as rng
+import math
 
 """
 TODO juurde
@@ -12,94 +13,143 @@ TODO parandada
 
 """
 
-ruudud = 40  # kui mitmeks ruuduks jagame
-ruudu_suurus = 30  # küljepikkus pikslites
-pikkus = ruudud * ruudu_suurus
-laius = pikkus
-lahutusvõime = (pikkus, laius)
-lahutusvõime2 = (laius - ruudu_suurus * 30, pikkus - ruudu_suurus * 30)
-# lahutusvõime2=(laius, pikkus)
-blitx = 0 - ruudu_suurus * 16
-blity = 0 - ruudu_suurus * 26
+RUUDUD = 40  # kui mitmeks ruuduks jagame
+RUUDU_SUURUS = 30  # küljepikkus pikslites
+PIKKUS = RUUDUD * RUUDU_SUURUS
+LAIUS = PIKKUS
+lahutusvõime = (PIKKUS, LAIUS)
+lahutusvõime2 = (LAIUS - RUUDU_SUURUS * 30, PIKKUS - RUUDU_SUURUS * 30)
 
-sammud_loendur = 0
-on_maas = False
+# miks 16 ja 26 ???
+blitx = 0 - RUUDU_SUURUS * 16
+blity = 0 - RUUDU_SUURUS * 26
 
 
 class World():
-    # ruutude piltide ja väärtuste jaoks dictionary
-    # vb peaks lahenduse üle vaatama, aga prg töötab
-    # peaks vast võtmeteks natuke iseloomulikumad asjad
-    # nvm läheb keeruliseks
-    pildid = {
-        1: "",
-        2: "",
-        3: ""
-    }
-
-    def lisa_pilt(tüüp, rea_lugeja, veeru_lugeja):
-        global ruudu_suurus
-        img = World.pildid[tüüp]
-        img = pygame.transform.scale(img, (ruudu_suurus, ruudu_suurus))
-        # loob recti (default asukoht on (0,0))
-        img_rect = img.get_rect()
-        # rect on pygame'i objekt (risttahukas), mis sisaldab koordinaate
-        img_rect.x = veeru_lugeja * ruudu_suurus
-        img_rect.y = rea_lugeja * ruudu_suurus
-        return (img, img_rect)
+    global RUUDU_SUURUS
 
     def __init__(self, maatriks):
         self.ruudud_list = []
-        # ei tekita collisionit
-        self.objektid_list = []
-        World.pildid[1] = pygame.image.load("tekstuur.jpg")
-        # kivi = 1
-        World.pildid[2] = pygame.image.load("tekstuur1.jpg")
-        # muru = 2
-        World.pildid[3] = pygame.image.load("mexico.png")
-        """
-        tekstuur2 = pygame.image.load()
-        ...
-        """
+
+        self.pildid = {}
+        self.pildid[1] = pygame.image.load("tekstuur.jpg")
+        self.pildid[2] = pygame.image.load("tekstuur1.jpg")
+        for pilt in self.pildid:
+            self.pildid[pilt] = pygame.transform.scale(self.pildid[pilt], (RUUDU_SUURUS, RUUDU_SUURUS))
+
+        self.maatriks = maatriks
+        self.spawn()
+
+    def spawn(self):
         # võtab maatriksist väärtuse andmed ja muudab selle
         # koordinaatidega seotud objektideks
         rea_lugeja = 0
-        print(maatriks)
-        for rida in maatriks:
+        for rida in self.maatriks:
             veeru_lugeja = 0
             for ruut in rida:
-                if ruut == 3:
-                    if int(maatriks[rea_lugeja + 1][veeru_lugeja]) == 2:
-                        ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
-                        self.objektid_list.append(ruut)
-                elif ruut > 0:
-                    ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
-                    self.ruudud_list.append(ruut)
-                veeru_lugeja += 1
+                if ruut > 0:
+                    # lisa_pilt tagastab ennikuna ruudule vastava pildi
+                    # ja recti
+                    pilt = self.tagasta_pilt(ruut)
+                    self.ruudud_list.append(self.loo_rect(pilt, rea_lugeja, veeru_lugeja))
+                    veeru_lugeja += 1
             rea_lugeja += 1
+
+    def tagasta_pilt(self, ruut):
+        return self.pildid[ruut]
+
+    def loo_rect(self, pilt, rea_lugeja, veeru_lugeja):
+        global RUUDU_SUURUS
+        rect = pilt.get_rect()
+        rect.x = veeru_lugeja * RUUDU_SUURUS
+        rect.y = rea_lugeja * RUUDU_SUURUS
+        return (pilt, rect)
 
     def joonista(self):
         for ruut in self.ruudud_list:
             window.blit(ruut[0], (ruut[1][0] + blitx, ruut[1][1] + blity))
-        for objekt in self.objektid_list:
-            window.blit(objekt[0], (objekt[1][0] + blitx, objekt[1][1] + blity))
+
+
+class Tegelane(World):
+    def __init__(self, maatriks, pilt):
+        self.ruudud_list = []
+        self.maatriks = maatriks
+        self.pilt = pygame.transform.scale(pygame.image.load(pilt), (2 * RUUDU_SUURUS, 2 * RUUDU_SUURUS))
+        self.pildid = [self.pilt, pygame.transform.flip(self.pilt, True, False)]
+        self.asend = 0
+        self.spawn()
+        self.lugeja = 0
+
+    def flip(self):
+        self.joonista(self.pildid[self.asend])
+        if self.lugeja == 30:
+            if self.asend == len(self.pildid) - 1:
+                self.asend = 0
+            else:
+                self.asend += 1
+            self.lugeja = 0
+        self.lugeja += 1
+
+    def collision(self):
+        for viiner in viinerid:
+            for ruut in self.ruudud_list:
+                if pygame.Rect.colliderect(viiner.rect, ruut[1]):
+                    viinerid.pop(viinerid.index(viiner))
+                    del viiner
+
+    def tagasta_pilt(self, ruut=None):
+        return self.pilt
+
+    def joonista(self, pilt):
+        for ruut in self.ruudud_list:
+            window.blit(pilt, (ruut[1][0] + blitx, ruut[1][1] + blity))
+
+
+class Viiner():
+    global blitx, blity
+
+    def __init__(self, x, y, suund):
+        self.pilt = pygame.transform.scale(pygame.image.load("viiner.png"), (RUUDU_SUURUS / 2, RUUDU_SUURUS / 2))
+        self.rect = self.pilt.get_rect()
+        self.rect.x = x
+        self.rect.y = y + RUUDU_SUURUS / 2
+        self.suund = suund
+        self.lugeja = 0
+
+    def liikumine(self):
+        # mingil põhjusel ei pööra pygame pilti ümber selle keskpunkti
+        '''if self.lugeja == 4:
+            self.pilt = pygame.transform.rotate(self.pilt, 45)
+            self.lugeja = 0
+        self.lugeja += 1'''
+        if self.suund < 0:
+            self.rect.x -= 5
+        else:
+            self.rect.x += 5
+        if self.rect.x > (LAIUS - RUUDU_SUURUS) or self.rect.x < RUUDU_SUURUS or self.rect.y > (PIKKUS - RUUDU_SUURUS):
+            return 0
+        else:
+            window.blit(self.pilt, (self.rect[0] + blitx, self.rect[1] + blity))
+            return 1
 
 
 class Player():
-    global window, lahutusvõime, world
+    global window, lahutusvõime, world, taco, viinerid
 
     def __init__(self, asukoht):
         img = pygame.image.load("seisab.png")
         img1 = pygame.image.load("samm1.png")
         img2 = pygame.image.load("samm2.png")
-        self.img_parem = pygame.transform.scale(img, (ruudu_suurus, ruudu_suurus * 2))
+        self.img_parem = pygame.transform.scale(img, (RUUDU_SUURUS, RUUDU_SUURUS * 2))
         self.img_vasak = pygame.transform.flip(self.img_parem, True, False)  # flipib pildi ümber y-telje
-        self.img_samm_parem = pygame.transform.scale(img1, (ruudu_suurus, ruudu_suurus * 2))
-        self.img_samm_vasak = pygame.transform.flip(self.img_samm_parem, True, False)
-        self.img_samm_parem2 = pygame.transform.scale(img2, (ruudu_suurus, ruudu_suurus * 2))
-        self.img_samm_vasak2 = pygame.transform.flip(self.img_samm_parem2, True, False)
-        self.sammud_frames_parem = [self.img_samm_parem, self.img_samm_parem, self.img_samm_parem, self.img_samm_parem, self.img_samm_parem, self.img_samm_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem]
-        self.sammud_frames_vasak = [self.img_samm_vasak, self.img_samm_vasak, self.img_samm_vasak, self.img_samm_vasak, self.img_samm_vasak, self.img_samm_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_samm_vasak2, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak, self.img_vasak]
+        img_samm_parem = pygame.transform.scale(img1, (RUUDU_SUURUS, RUUDU_SUURUS * 2))
+        img_samm_vasak = pygame.transform.flip(img_samm_parem, True, False)
+        img_samm_parem2 = pygame.transform.scale(img2, (RUUDU_SUURUS, RUUDU_SUURUS * 2))
+        img_samm_vasak2 = pygame.transform.flip(img_samm_parem2, True, False)
+        self.sammud_frames_parem = [img_samm_parem, self.img_parem,
+                                    img_samm_parem2, self.img_parem]
+        self.sammud_frames_vasak = [img_samm_vasak, self.img_vasak,
+                                    img_samm_vasak2, self.img_vasak]
 
         self.rect = self.img_parem.get_rect()
         self.rect.x = asukoht[0]
@@ -111,9 +161,12 @@ class Player():
         self.kiirus_y = 0
         self.suund = 0
         self.maas = True
+        self.sammud_loendur = 0
+        self.lugeja = 0
 
     def uuenda(self):
-        global sammud_loendur, blitx, blity
+        # global sammud_loendur
+        global blitx, blity
 
         dx = 0
         dy = 0
@@ -136,6 +189,11 @@ class Player():
             dx += 10
             self.suund = 1
             liikumine = True
+        if key[pygame.K_f] and self.laseb_viinerit is False:
+            viinerid.append(Viiner(x=self.rect.x, y=self.rect.y, suund=self.suund))
+            self.laseb_viinerit = True
+        elif key[pygame.K_f] is False:
+            self.laseb_viinerit = False
 
         self.kiirus_y += 1
         # kukkumisel on max kiirus
@@ -143,8 +201,9 @@ class Player():
             self.kiirus_y = 30
         dy += self.kiirus_y
 
+        objektid = world.ruudud_list + taco.ruudud_list
         # collision detect
-        for ruut in world.ruudud_list:
+        for ruut in objektid:
             if ruut[1].colliderect(self.rect.x + dx, self.rect.y, self.suurus[0], self.suurus[1]):
                 dx = 0
             if ruut[1].colliderect(self.rect.x, self.rect.y + dy, self.suurus[0], self.suurus[1]):
@@ -161,8 +220,8 @@ class Player():
         # ei kuku frame'ist välja
         if self.rect.x < 0:
             self.rect.x = 0
-        elif self.rect.x > lahutusvõime[0] - ruudu_suurus:
-            self.rect.x = lahutusvõime[0] - ruudu_suurus
+        elif self.rect.x > lahutusvõime[0] - RUUDU_SUURUS:
+            self.rect.x = lahutusvõime[0] - RUUDU_SUURUS
         if self.rect.y < 0:
             self.rect.y = 0
 
@@ -175,18 +234,20 @@ class Player():
         # joonistab mängija ekraanile
         if self.suund == 1:
             img = self.img_parem
-            if liikumine is True:
-                if sammud_loendur == 23:
-                    sammud_loendur = 0
-                img = self.sammud_frames_parem[sammud_loendur]
-                sammud_loendur += 1
+            list_sammud = self.sammud_frames_parem
         else:
             img = self.img_vasak
-            if liikumine is True:
-                if sammud_loendur == 23:
-                    sammud_loendur = 0
-                img = self.sammud_frames_vasak[sammud_loendur]
-                sammud_loendur += 1
+            list_sammud = self.sammud_frames_vasak
+
+        sammud_tsükkel_pikkus = 24
+        if liikumine is False:
+            self.sammud_loendur = 0
+        pilt_index = math.floor(self.sammud_loendur / (sammud_tsükkel_pikkus / len(list_sammud)))
+        img = list_sammud[pilt_index]
+        if self.sammud_loendur == sammud_tsükkel_pikkus - 1:
+            self.sammud_loendur = 0
+        else:
+            self.sammud_loendur += 1
 
         window.blit(img, (self.rect[0] + blitx, self.rect[1] + blity))
         # pygame.draw.rect(window, (0, 255, 0 ), self.rect, 2)
@@ -194,16 +255,16 @@ class Player():
 
 # joonistab ruudustiku välja
 def ruudustik():
-    global window, ruudu_suurus, ruudud, lahutusvõime
-    for i in range(ruudud):
-        pygame.draw.line(window, (255, 255, 255), (i * ruudu_suurus, 0),
-                         (i * ruudu_suurus, lahutusvõime[1]))
-        pygame.draw.line(window, (255, 255, 255), (0, i * ruudu_suurus),
-                         (lahutusvõime[0], i * ruudu_suurus))
+    global window, RUUDU_SUURUS, RUUDUD, lahutusvõime
+    for i in range(RUUDUD):
+        pygame.draw.line(window, (255, 255, 255), (i * RUUDU_SUURUS, 0),
+                         (i * RUUDU_SUURUS, lahutusvõime[1]))
+        pygame.draw.line(window, (255, 255, 255), (0, i * RUUDU_SUURUS),
+                         (lahutusvõime[0], i * RUUDU_SUURUS))
 
 
 def main():
-    global window, lahutusvõime, world
+    global window, lahutusvõime, world, taco, viinerid
     pygame.init()
 
     FPS = 60  # et programm töötaks olenemata riistvarast samasuguselt
@@ -218,20 +279,23 @@ def main():
 
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
-    world_maatriks = numpy.zeros((ruudud, ruudud))
+    world_maatriks = numpy.zeros((RUUDUD, RUUDUD))
     world_maatriks[0:3] = 1  # testimiseks
     world_maatriks[1:39, 0:3] = 1
     world_maatriks[1:39, 36:40] = 1
     world_maatriks[36:40] = 2
     world_maatriks[32, 3:33] = 2
     world_maatriks[28, 6:36] = 2
-    for i in range(7):
-        blunt = rng(5, 35)
-        world_maatriks[27, blunt] = 3
 
     world = World(world_maatriks)
 
-    player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*10)))
+    player = Player((RUUDU_SUURUS*20, lahutusvõime[0] - (RUUDU_SUURUS*10)))
+
+    taco_maatriks = numpy.zeros((RUUDUD, RUUDUD))
+    taco_maatriks[30, 20:28] = 1
+    taco = Tegelane(maatriks=taco_maatriks, pilt="mexico.png")
+
+    viinerid = []
 
     fpsKell = pygame.time.Clock()  # loob objekti aja jälgimiseks
     run = True
@@ -239,18 +303,27 @@ def main():
 
         # lisab pildi aknas kuvatavale frame'ile
         # järjekord oluline !
-        window.blit(taust, (0+blitx, 0+blity))
-        # window.blit(man, (0, 600))
-
+        window.blit(taust, (0 + blitx, 0 + blity))
         # ruudustik()  # loob ruudusitku
 
-        World.joonista(world)  # joonistab tekstuuriga ruudud ekraanile
-        Player.uuenda(player)
+        world.joonista()
+        taco.flip()
+        # taco.flip()
+        for viiner in viinerid:
+            if viiner.liikumine() == 0:
+                viinerid.pop(viinerid.index(viiner))
+                del viiner
+        taco.collision()
+
+        player.uuenda()
 
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_x or event.key == pygame.K_q:
                     run = False
+                if event.key == pygame.K_c:
+                    # prindib player'i koordinaadid ja maatriksi elemendi (rida, veerg)
+                    print(f"x: {player.rect.x}, y: {player.rect.y}, maatriks r:{int(player.rect.y / RUUDU_SUURUS)}, v:{int(player.rect.x / RUUDU_SUURUS)}")
 
         pygame.display.update()  # värksendab aknas kuvatavat frame'i
 
