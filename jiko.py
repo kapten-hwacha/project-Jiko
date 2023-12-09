@@ -118,10 +118,10 @@ class Viiner():
 
     def liikumine(self):
         # mingil põhjusel ei pööra pygame pilti ümber selle keskpunkti
-        '''if self.lugeja == 4:
-            self.pilt = pygame.transform.rotate(self.pilt, 45)
+        if self.lugeja == 6:
+            self.pilt = pygame.transform.rotate(self.pilt, 90)
             self.lugeja = 0
-        self.lugeja += 1'''
+        self.lugeja += 1
         if self.suund < 0:
             self.rect.x -= 5
         else:
