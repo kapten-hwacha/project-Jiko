@@ -63,14 +63,14 @@ class World():
         rect = pilt.get_rect()
         rect.x = veeru_lugeja * RUUDU_SUURUS
         rect.y = rea_lugeja * RUUDU_SUURUS
-        return (pilt, rect)
+        return [pilt, rect]
 
     def joonista(self):
         for ruut in self.ruudud_list:
             window.blit(ruut[0], (ruut[1][0] + blitx, ruut[1][1] + blity))
 
 
-class Tegelane(World):
+class Taco(World):
     def __init__(self, maatriks, pilt):
         self.ruudud_list = []
         self.maatriks = maatriks
@@ -78,6 +78,9 @@ class Tegelane(World):
         self.pildid = [self.pilt, pygame.transform.flip(self.pilt, True, False)]
         self.asend = 0
         self.spawn()
+        for ruut in self.ruudud_list:
+            # võib kolm korda viineriga pihta saada
+            ruut.append(2)
         self.lugeja = 0
 
     def flip(self):
@@ -96,6 +99,9 @@ class Tegelane(World):
                 if pygame.Rect.colliderect(viiner.rect, ruut[1]):
                     viinerid.pop(viinerid.index(viiner))
                     del viiner
+                    ruut[2] -= 1
+                if ruut[2] == 0:
+                    self.ruudud_list.pop(self.ruudud_list.index(ruut))
 
     def tagasta_pilt(self, ruut=None):
         return self.pilt
@@ -293,7 +299,7 @@ def main():
 
     taco_maatriks = numpy.zeros((RUUDUD, RUUDUD))
     taco_maatriks[30, 20:28] = 1
-    taco = Tegelane(maatriks=taco_maatriks, pilt="mexico.png")
+    taco = Taco(maatriks=taco_maatriks, pilt="mexico.png")
 
     viinerid = []
 
