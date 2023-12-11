@@ -16,11 +16,13 @@ ruudu_suurus = 10 # küljepikkus pikslites
 pikkus = ruudud * ruudu_suurus
 laius = pikkus
 lahutusvõime = (pikkus, laius)
-#lahutusvõime2 = (laius-ruudu_suurus*30, pikkus-ruudu_suurus*30)
-lahutusvõime2=(laius, pikkus)
-mängija_asukoht=(ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*10))
-blitx=0#-ruudu_suurus*16
-blity=0#-ruudu_suurus*26
+lahutusvõime2 = (laius-ruudu_suurus*30, pikkus-ruudu_suurus*30)
+#lahutusvõime2=(laius, pikkus)
+mängija_asukoht=(ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*10))#player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*4)))
+
+#liigutab kaamerat vastaval player'i liikumisele
+blitx=0-ruudu_suurus*15
+blity=0-ruudu_suurus*30
 
 sammud_loendur=0
 on_maas=False
@@ -48,12 +50,13 @@ class World():
 
     def __init__(self, maatriks):
         self.ruudud_list = []
-        tekstuur1 = pygame.image.load("tekstuur.jpg")
-        tekstuur2 = pygame.image.load("tekstuur1.jpg")
-        npc0_ülemine = pygame.image.load("player_6lemine.png")
-        npc0_alumine = pygame.image.load("player_alumine.png")
+        tekstuur1 = pygame.image.load("tekstuur.jpg") #TELLISKIVID
+        tekstuur2 = pygame.image.load("tekstuur1.jpg") #LEHED
+        npc0_ülemine = pygame.image.load("player_6lemine.png") #VANAMEES
+        npc0_alumine = pygame.image.load("player_alumine.png") #VANAMEES
         npc0_ülemine = pygame.transform.flip(npc0_ülemine, True, False)
         npc0_alumine = pygame.transform.flip(npc0_alumine, True, False)
+        
         World.pildid[1] = tekstuur1
         World.pildid[2] = tekstuur2
         World.pildid[3] = npc0_ülemine
@@ -77,7 +80,7 @@ class World():
         
     def joonista(self):
         for ruut in self.ruudud_list:
-            window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
+            window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
         pass
         
 
@@ -157,8 +160,8 @@ class Player():
         # uuendab mängija koordinaate ja kaamera (tegelt maailma) asukohta
         self.rect.x += dx
         self.rect.y += dy
-        #blitx = blitx -dx  
-        #blity = blity -dy
+        blitx = blitx -dx  
+        blity = blity -dy
 
         # joonistab mängija ekraanile
         if self.suund == 1:
@@ -210,14 +213,15 @@ def main():
     world_maatriks[0:3] = 2  # testimiseks
     world_maatriks[1:39, 0:3] = 2
     world_maatriks[1:39, 36:40] = 2
-    world_maatriks[36:40] = 1####
-    world_maatriks[32:33, 3:33] = 1####
-    world_maatriks[28:29, 6:36] = 1####
-    world_maatriks[26, 32] = 3
-    world_maatriks[27, 32] = 4
+    world_maatriks[36:40] = 1
+    world_maatriks[32:33, 3:28] = 2
+    world_maatriks[28:29, 6:36] = 2
+    world_maatriks[35, 30:36] = 1
+    world_maatriks[33, 33] = 3
+    world_maatriks[34, 33] = 4
     world = World(world_maatriks)
 
-    player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*10)))
+    player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*4)))
 
     fpsKell = pygame.time.Clock()  # loob objekti aja jälgimiseks
     run = True
@@ -248,14 +252,7 @@ def main():
         # pärast määrata muutuja väärtuseks, et liikumine toimuks ühtselt?
         fpsKell.tick(FPS)  # uuendab 'kella' väärtust
 
-    mapfail=open("map.txt", "w")
-    for rida in (world_maatriks):
-        rida=str(rida)
-        rida.replace("\n", "")
-        mapfail.write(rida)
-        mapfail.write("\n")
-        
-    mapfail.close()
+    
     pygame.quit()
 
 
