@@ -18,11 +18,11 @@ laius = pikkus
 lahutusvõime = (pikkus, laius)
 lahutusvõime2 = (laius-ruudu_suurus*30, pikkus-ruudu_suurus*30)
 #lahutusvõime2=(laius, pikkus)
-mängija_asukoht=(ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*10))#player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*4)))
+mängija_teleport_sihtkoht=((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*6)))#player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*6)))
 
 #liigutab kaamerat vastaval player'i liikumisele
 blitx=0-ruudu_suurus*15
-blity=0-ruudu_suurus*30
+blity=0-ruudu_suurus*29
 
 sammud_loendur=0
 on_maas=False
@@ -52,10 +52,8 @@ class World():
         self.ruudud_list = []
         tekstuur1 = pygame.image.load("tekstuur.jpg") #TELLISKIVID
         tekstuur2 = pygame.image.load("tekstuur1.jpg") #LEHED
-        npc0_ülemine = pygame.image.load("player_6lemine.png") #VANAMEES
-        npc0_alumine = pygame.image.load("player_alumine.png") #VANAMEES
-        npc0_ülemine = pygame.transform.flip(npc0_ülemine, True, False)
-        npc0_alumine = pygame.transform.flip(npc0_alumine, True, False)
+        npc0_ülemine = pygame.transform.flip(pygame.image.load("player_6lemine.png"), True, False) #VANAMEES ÜLAKEHA
+        npc0_alumine = pygame.transform.flip(pygame.image.load("player_alumine.png"), True, False) #VANAMEES ALAKEHA
         
         World.pildid[1] = tekstuur1
         World.pildid[2] = tekstuur2
@@ -76,6 +74,10 @@ class World():
                     self.ruudud_list.append(ruut)
                 veeru_lugeja += 1
             rea_lugeja += 1
+        pass
+    
+    #maailma uuendaja
+    def uuenda(self):
         pass
         
     def joonista(self):
@@ -191,6 +193,12 @@ def ruudustik():
                          (i * ruudu_suurus, lahutusvõime[1]))
         pygame.draw.line(window, (255, 255, 255), (0, i * ruudu_suurus),
                          (lahutusvõime[0], i * ruudu_suurus))
+        
+# uuendaja kõigile
+def Uuenda_kõik(mängija, maailm):
+    Player.uuenda(mängija)
+    World.uuenda(maailm)
+    
 
 
 def main():
@@ -221,7 +229,7 @@ def main():
     world_maatriks[34, 33] = 4
     world = World(world_maatriks)
 
-    player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*4)))
+    player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*6)))
 
     fpsKell = pygame.time.Clock()  # loob objekti aja jälgimiseks
     run = True
@@ -235,15 +243,16 @@ def main():
         #ruudustik()  # loob ruudusitku
 
         World.joonista(world)  # joonistab tekstuuriga ruudud ekraanile
-        Player.uuenda(player)
+        
+        Uuenda_kõik(player, world) # uuendab kõiki asju
 
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_x:
                     run = False
                 elif event.key == pygame.K_e:
-                    player.rect.x = mängija_asukoht[0]
-                    player.rect.y = mängija_asukoht[1]
+                    player.rect.x = mängija_teleport_sihtkoht[0]
+                    player.rect.y = mängija_teleport_sihtkoht[1]
                     print("vajutati e")
                 
 
