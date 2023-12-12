@@ -40,6 +40,7 @@ class World():
     def lisa_pilt(tüüp, rea_lugeja, veeru_lugeja):
         global ruudu_suurus
         img = World.pildid[tüüp]
+        img = img[0]
         img = pygame.transform.scale(img, (ruudu_suurus, ruudu_suurus))
         # loob recti (default asukoht on (0,0))
         img_rect = img.get_rect()
@@ -49,16 +50,19 @@ class World():
         return (img, img_rect)
 
     def __init__(self, maatriks):
+        self.maatriks=maatriks
         self.ruudud_list = []
         tekstuur1 = pygame.image.load("tekstuur.jpg") #TELLISKIVID
         tekstuur2 = pygame.image.load("tekstuur1.jpg") #LEHED
         npc0_ülemine = pygame.transform.flip(pygame.image.load("player_6lemine.png"), True, False) #VANAMEES ÜLAKEHA
         npc0_alumine = pygame.transform.flip(pygame.image.load("player_alumine.png"), True, False) #VANAMEES ALAKEHA
         
-        World.pildid[1] = tekstuur1
-        World.pildid[2] = tekstuur2
-        World.pildid[3] = npc0_ülemine
-        World.pildid[4] = npc0_alumine
+        #World.pildid[] = [tekstuur, <kas ta on taimeriga kadumine(True or False)> ]
+        
+        World.pildid[1] = [tekstuur1, False] 
+        World.pildid[2] = [tekstuur2, True ]
+        World.pildid[3] = [npc0_ülemine, False ]
+        World.pildid[4] = [npc0_alumine, False ]
         """
         tekstuur2 = pygame.image.load()
         ...
@@ -78,7 +82,37 @@ class World():
     
     #maailma uuendaja
     def uuenda(self):
+        rea_lugeja = 0
+        for rida in self.maatriks:
+            veeru_lugeja = 0
+            for ruut in rida:
+                if ruut != 0:
+                    blokk = World.pildid[ruut]
+                    if blokk[1] == True:
+                        """
+                        bloki_taimer_alustati = False
+                        if player asukoht == ruudu peal, and bloki_taimer_alustati == False:
+                            bloki_taimer_alustati = True
+                            bloki_spets_taimer = 0
+                        elif bloki_taimer_alustati == True and bloki_spets_down_taimer_alustati == False:
+                            bloki_spets_taimer += 1
+                            if bloki_spets_taimer>10:
+                                blokk = 0
+                                bloki_spets_down_taimer_alustati = True
+                                bloki_taimer_alustati = False
+                                bloki_spets_down_taimer = 0
+                        elif bloki_taimer_alustati == False and bloki_spets_down_taimer_alustati == True:
+                            bloki_spets_down_taimer += 1
+                            if bloki_spets_down_taimer >10:
+                                blokk = <tagasi mis ta ennem oli>
+                                bloki_spets_down_taimer_alustati = False
+                        """
+                                
+                        pass
+                veeru_lugeja += 1
+            rea_lugeja += 1
         pass
+    
         
     def joonista(self):
         for ruut in self.ruudud_list:
@@ -183,7 +217,8 @@ class Player():
                 
         window.blit(img, (self.rect[0]+blitx, self.rect[1]+blity))
         #pygame.draw.rect(window, (0, 255, 0 ), self.rect, 2)
-
+        
+        print(f"{self.rect.x} = X {self.rect.y} = Y")
 
 # joonistab ruudustiku välja
 def ruudustik():
