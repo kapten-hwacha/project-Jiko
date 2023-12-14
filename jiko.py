@@ -12,7 +12,7 @@ TODO parandada
 """
 
 ruudud = 40  # kui mitmeks ruuduks jagame
-ruudu_suurus = 10 # küljepikkus pikslites
+ruudu_suurus = 30 # küljepikkus pikslites
 pikkus = ruudud * ruudu_suurus
 laius = pikkus
 lahutusvõime = (pikkus, laius)
@@ -24,8 +24,11 @@ mängija_teleport_sihtkoht=((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*6
 blitx=0-ruudu_suurus*15
 blity=0-ruudu_suurus*29
 
-sammud_loendur=0
-on_maas=False
+sammud_loendur = 0
+on_maas = False
+vaja_uuendada = True
+mängija_X = 0
+mängija_Y = 0
 
 
 class World():
@@ -52,6 +55,7 @@ class World():
     def __init__(self, maatriks):
         self.maatriks=maatriks
         self.ruudud_list = []
+        self.responsive_blocks = []
         tekstuur1 = pygame.image.load("tekstuur.jpg") #TELLISKIVID
         tekstuur2 = pygame.image.load("tekstuur1.jpg") #LEHED
         npc0_ülemine = pygame.transform.flip(pygame.image.load("player_6lemine.png"), True, False) #VANAMEES ÜLAKEHA
@@ -63,6 +67,7 @@ class World():
         World.pildid[2] = [tekstuur2, True ]
         World.pildid[3] = [npc0_ülemine, False ]
         World.pildid[4] = [npc0_alumine, False ]
+
         """
         tekstuur2 = pygame.image.load()
         ...
@@ -74,14 +79,27 @@ class World():
             veeru_lugeja = 0
             for ruut in rida:
                 if ruut != 0:
-                    ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
-                    self.ruudud_list.append(ruut)
+                    if ruut == 2:
+                        ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
+                        self.responsive_blocks.append(ruut)
+                    else:
+                        ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
+                        self.ruudud_list.append(ruut)
                 veeru_lugeja += 1
             rea_lugeja += 1
         pass
     
     #maailma uuendaja
     def uuenda(self):
+        global vaja_uuendada
+        
+        if vaja_uuendada:
+            for ruut in self.responsive_blocks:
+                window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
+        if mängija_X>810 and mängija_X<870 and mängija_Y==1050:
+            #muuda alumine augu muru blokk õhuks ajutiselt
+            pass
+    
         rea_lugeja = 0
         for rida in self.maatriks:
             veeru_lugeja = 0
@@ -146,7 +164,7 @@ class Player():
      
 
     def uuenda(self):
-        global sammud_loendur, on_maas, blitx, blity
+        global sammud_loendur, on_maas, blitx, blity, mängija_X, mängija_Y
         
         #player character sammude animation frames
         sammud_frames_parem=[self.img_samm_parem, self.img_samm_parem, self.img_samm_parem,self.img_samm_parem, self.img_samm_parem, self.img_samm_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_samm_parem2, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem, self.img_parem]
@@ -191,11 +209,28 @@ class Player():
                     dy = ruut[1].top - self.rect.bottom
                     self.kiirus_y = 0
                     on_maas=True
+                    
+        for ruut in world.responsive_blocks:
+            if ruut[1].colliderect(self.rect.x + dx, self.rect.y, self.suurus[0], self.suurus[1]):
+                dx = 0
+            if ruut[1].colliderect(self.rect.x, self.rect.y + dy, self.suurus[0], self.suurus[1]):
+                # kui collision tekib hüppamisel
+                if self.kiirus_y < 0:
+                    dy = ruut[1].bottom - self.rect.top
+                    self.kiirus_y = 0
+                # kui collision tekib kukkumisel
+                else:
+                    dy = ruut[1].top - self.rect.bottom
+                    self.kiirus_y = 0
+                    on_maas=True
                 
 
         # uuendab mängija koordinaate ja kaamera (tegelt maailma) asukohta
         self.rect.x += dx
         self.rect.y += dy
+        mängija_X = self.rect.x
+        mängija_Y = self.rect.y
+
         blitx = blitx -dx  
         blity = blity -dy
 
@@ -218,8 +253,6 @@ class Player():
         window.blit(img, (self.rect[0]+blitx, self.rect[1]+blity))
         #pygame.draw.rect(window, (0, 255, 0 ), self.rect, 2)
         
-        print(f"{self.rect.x} = X {self.rect.y} = Y")
-
 # joonistab ruudustiku välja
 def ruudustik():
     global window, ruudu_suurus, ruudud, lahutusvõime
@@ -255,15 +288,18 @@ def main():
     world_maatriks = numpy.zeros((ruudud, ruudud))
     world_maatriks[0:3] = 2  # testimiseks
     world_maatriks[1:39, 0:3] = 2
-    world_maatriks[1:39, 36:40] = 2
+    world_maatriks[1:39, 36:40] = 1
     world_maatriks[36:40] = 1
     world_maatriks[32:33, 3:28] = 2
     world_maatriks[28:29, 6:36] = 2
     world_maatriks[35, 30:36] = 1
     world_maatriks[33, 33] = 3
     world_maatriks[34, 33] = 4
+    world_maatriks[36, 27:30] = 0
+    world_maatriks[37, 28] = 2
     world = World(world_maatriks)
-
+    
+    
     player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*6)))
 
     fpsKell = pygame.time.Clock()  # loob objekti aja jälgimiseks
