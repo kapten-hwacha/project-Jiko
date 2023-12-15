@@ -55,7 +55,7 @@ class World():
     def __init__(self, maatriks):
         self.maatriks=maatriks
         self.ruudud_list = []
-        self.responsive_blocks = []
+        self.responsive_blocks = {}
         tekstuur1 = pygame.image.load("tekstuur.jpg") #TELLISKIVID
         tekstuur2 = pygame.image.load("tekstuur1.jpg") #LEHED
         npc0_ülemine = pygame.transform.flip(pygame.image.load("player_6lemine.png"), True, False) #VANAMEES ÜLAKEHA
@@ -81,7 +81,8 @@ class World():
                 if ruut != 0:
                     if ruut == 2:
                         ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
-                        self.responsive_blocks.append(ruut)
+                        responsive_blocks_dict_nimi= str(rea_lugeja)+"//"+str(veeru_lugeja)
+                        self.responsive_blocks[responsive_blocks_dict_nimi]= ruut
                     else:
                         ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
                         self.ruudud_list.append(ruut)
@@ -94,10 +95,19 @@ class World():
         global vaja_uuendada
         
         if vaja_uuendada:
-            for ruut in self.responsive_blocks:
-                window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
+            for ruut in self.responsive_blocks.values():
+                if ruut == "TEMP GONE":
+                    pass
+                else:
+                    window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
+                    
         if mängija_X>810 and mängija_X<870 and mängija_Y==1050:
             #muuda alumine augu muru blokk õhuks ajutiselt
+            print(self.responsive_blocks)
+            try:
+                self.responsive_blocks.pop("37//28")
+            except:
+                pass
             pass
     
         rea_lugeja = 0
@@ -210,7 +220,7 @@ class Player():
                     self.kiirus_y = 0
                     on_maas=True
                     
-        for ruut in world.responsive_blocks:
+        for ruut in world.responsive_blocks.values():
             if ruut[1].colliderect(self.rect.x + dx, self.rect.y, self.suurus[0], self.suurus[1]):
                 dx = 0
             if ruut[1].colliderect(self.rect.x, self.rect.y + dy, self.suurus[0], self.suurus[1]):
