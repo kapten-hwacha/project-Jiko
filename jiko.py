@@ -29,7 +29,9 @@ on_maas = False
 vaja_uuendada = True
 mängija_X = 0
 mängija_Y = 0
-
+blokk_up_timer = False
+blokk_up_timer_loendur = 0
+temp_blokk_sisu = None 
 
 class World():
     # ruutude piltide ja väärtuste jaoks dictionary
@@ -79,6 +81,8 @@ class World():
             veeru_lugeja = 0
             for ruut in rida:
                 if ruut != 0:
+                    #kontrollib kas permanent ruut või 'interactable' ruut
+                    
                     if ruut == 2:
                         ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
                         responsive_blocks_dict_nimi= str(rea_lugeja)+"//"+str(veeru_lugeja)
@@ -86,13 +90,14 @@ class World():
                     else:
                         ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
                         self.ruudud_list.append(ruut)
+                        
                 veeru_lugeja += 1
             rea_lugeja += 1
         pass
     
     #maailma uuendaja
     def uuenda(self):
-        global vaja_uuendada
+        global vaja_uuendada, blokk_up_timer, blokk_up_timer_loendur, temp_blokk_sisu
         
         if vaja_uuendada:
             for ruut in self.responsive_blocks.values():
@@ -100,15 +105,25 @@ class World():
                     pass
                 else:
                     window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
-                    
+        
+        # peab ära kaardistama punktid, kus player aktiveerib interactable bloki
+        # need praegu on bloki "37//38" jaoks 
         if mängija_X>810 and mängija_X<870 and mängija_Y==1050:
             #muuda alumine augu muru blokk õhuks ajutiselt
-            print(self.responsive_blocks)
-            try:
-                self.responsive_blocks.pop("37//28")
-            except:
-                pass
-            pass
+            if self.responsive_blocks["37//28"] != "TEMP GONE":
+                temp_blokk_sisu = self.responsive_blocks["37//28"]
+                self.responsive_blocks["37//28"] = "TEMP GONE"
+                blokk_up_timer_loendur = 0
+                blokk_up_timer = True
+            
+        if blokk_up_timer:
+            blokk_up_timer_loendur += 1
+            if blokk_up_timer_loendur == 300:
+                print("blokk_up_timer_loendur")
+                self.responsive_blocks["37//28"] = temp_blokk_sisu
+                print(self.responsive_blocks["37//28"])
+                blokk_up_timer = False 
+            
     
         rea_lugeja = 0
         for rida in self.maatriks:
@@ -205,7 +220,7 @@ class Player():
             self.vel_y = 10
         dy += self.kiirus_y
 
-        # collision detect
+        # collision detect for perma bloks
         for ruut in world.ruudud_list:
             if ruut[1].colliderect(self.rect.x + dx, self.rect.y, self.suurus[0], self.suurus[1]):
                 dx = 0
@@ -220,20 +235,24 @@ class Player():
                     self.kiirus_y = 0
                     on_maas=True
                     
+        # collision detect for interactable bloks
         for ruut in world.responsive_blocks.values():
-            if ruut[1].colliderect(self.rect.x + dx, self.rect.y, self.suurus[0], self.suurus[1]):
-                dx = 0
-            if ruut[1].colliderect(self.rect.x, self.rect.y + dy, self.suurus[0], self.suurus[1]):
-                # kui collision tekib hüppamisel
-                if self.kiirus_y < 0:
-                    dy = ruut[1].bottom - self.rect.top
-                    self.kiirus_y = 0
-                # kui collision tekib kukkumisel
-                else:
-                    dy = ruut[1].top - self.rect.bottom
-                    self.kiirus_y = 0
-                    on_maas=True
-                
+            if ruut == "TEMP GONE":
+                pass
+            else:
+                if ruut[1].colliderect(self.rect.x + dx, self.rect.y, self.suurus[0], self.suurus[1]):
+                    dx = 0
+                if ruut[1].colliderect(self.rect.x, self.rect.y + dy, self.suurus[0], self.suurus[1]):
+                    # kui collision tekib hüppamisel
+                    if self.kiirus_y < 0:
+                        dy = ruut[1].bottom - self.rect.top
+                        self.kiirus_y = 0
+                    # kui collision tekib kukkumisel
+                    else:
+                        dy = ruut[1].top - self.rect.bottom
+                        self.kiirus_y = 0
+                        on_maas=True
+                    
 
         # uuendab mängija koordinaate ja kaamera (tegelt maailma) asukohta
         self.rect.x += dx
@@ -321,7 +340,7 @@ def main():
         window.blit(taust, (0+blitx, 0+blity))
         # window.blit(man, (0, 600))
 
-        #ruudustik()  # loob ruudusitku
+        ruudustik()  # loob ruudusitku
 
         World.joonista(world)  # joonistab tekstuuriga ruudud ekraanile
         
