@@ -26,7 +26,7 @@ blity=0-ruudu_suurus*29
 
 sammud_loendur = 0
 on_maas = False
-vaja_uuendada = True
+vaja_uuendada = False
 mängija_X = 0
 mängija_Y = 0
 blokk_up_timer = False
@@ -58,17 +58,23 @@ class World():
         self.maatriks=maatriks
         self.ruudud_list = []
         self.responsive_blocks = {}
+        self.responsive_blocks_temp = {}
+        self.responsive_blocks_taimers = {}
+        self.responsive_blocks_activation_zones_Y= {}
+        self.responsive_blocks_activation_zones_X= {}
         tekstuur1 = pygame.image.load("tekstuur.jpg") #TELLISKIVID
         tekstuur2 = pygame.image.load("tekstuur1.jpg") #LEHED
+        tekstuur5 = pygame.image.load("tekstuur1.jpg") #MITTE MUUTUVAD LEHED
         npc0_ülemine = pygame.transform.flip(pygame.image.load("player_6lemine.png"), True, False) #VANAMEES ÜLAKEHA
         npc0_alumine = pygame.transform.flip(pygame.image.load("player_alumine.png"), True, False) #VANAMEES ALAKEHA
         
         #World.pildid[] = [tekstuur, <kas ta on taimeriga kadumine(True or False)> ]
         
-        World.pildid[1] = [tekstuur1, False] 
+        World.pildid[1] = [tekstuur1, False ] 
         World.pildid[2] = [tekstuur2, True ]
         World.pildid[3] = [npc0_ülemine, False ]
         World.pildid[4] = [npc0_alumine, False ]
+        World.pildid[5] = [tekstuur5, False ]
 
         """
         tekstuur2 = pygame.image.load()
@@ -85,19 +91,34 @@ class World():
                     
                     if ruut == 2:
                         ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
-                        responsive_blocks_dict_nimi= str(rea_lugeja)+"//"+str(veeru_lugeja)
+                        responsive_blocks_dict_nimi= str(rea_lugeja)+ "//"+ str(veeru_lugeja)
+                        activation_zone_y = (rea_lugeja+1)*30 - (3*30)
+                        activation_zone_x_min = ((veeru_lugeja + 1) * 30) - 30 - 30
+                        activation_zone_x_max = ((veeru_lugeja + 1) * 30) + 30 - 30
+                        activation_zone_x = (activation_zone_x_min, activation_zone_x_max)
+                        self.responsive_blocks_activation_zones_Y[responsive_blocks_dict_nimi] = activation_zone_y
+                        self.responsive_blocks_activation_zones_X[responsive_blocks_dict_nimi] = activation_zone_x
+                        self.responsive_blocks_temp[responsive_blocks_dict_nimi] = "place holder"
                         self.responsive_blocks[responsive_blocks_dict_nimi]= ruut
+                        self.responsive_blocks_taimers[responsive_blocks_dict_nimi] = "place holder"
+                        
                     else:
                         ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
                         self.ruudud_list.append(ruut)
                         
                 veeru_lugeja += 1
             rea_lugeja += 1
+            
         pass
     
     #maailma uuendaja
     def uuenda(self):
-        global vaja_uuendada, blokk_up_timer, blokk_up_timer_loendur, temp_blokk_sisu
+        global vaja_uuendada, blokk_up_timer
+        
+        for midagi in self.responsive_blocks_taimers.keys():
+                if self.responsive_blocks_taimers[midagi] != "place holder":
+                    vaja_uuendada = True
+                    blokk_up_timer = True 
         
         if vaja_uuendada:
             for ruut in self.responsive_blocks.values():
@@ -106,60 +127,68 @@ class World():
                 else:
                     window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
         
-        # peab ära kaardistama punktid, kus player aktiveerib interactable bloki
-        # need praegu on bloki "37//38" jaoks 
-        if mängija_X>810 and mängija_X<870 and mängija_Y==1050:
-            #muuda alumine augu muru blokk õhuks ajutiselt
-            if self.responsive_blocks["37//28"] != "TEMP GONE":
-                temp_blokk_sisu = self.responsive_blocks["37//28"]
-                self.responsive_blocks["37//28"] = "TEMP GONE"
-                blokk_up_timer_loendur = 0
-                blokk_up_timer = True
+        """
+        activation_zone_y = (rea_lugeja+1)*30 - (2*30)
+        activation_zone_x_min = ((veeru_lugeja + 1) * 30) - 30
+        activation_zone_x_max = ((veeru_lugeja + 1) * 30) + 30
+        activation_zone_x = (activation_zone_x_min, activation_zone_x_max)
+        activation_zone = (activation_zone_y, activation_zone_x)
+        self.responsive_blocks_activation_zones[responsive_blocks_dict_nimi] = activation_zone
+        """
+        
+        
+        # kui mängija on aktiveerimis tsoonis, siis:
+        for midagi in self.responsive_blocks_activation_zones_Y.keys():
+            if mängija_Y == self.responsive_blocks_activation_zones_Y[midagi]:
+                rea_kordinaat = midagi.split("//")
+                player_seisab_real = rea_kordinaat[0]
+                #print(player_seisab_real, "rida")
+                for midagi in self.responsive_blocks_activation_zones_X.keys():
+                    if mängija_X>self.responsive_blocks_activation_zones_X[midagi][0] and mängija_X<self.responsive_blocks_activation_zones_X[midagi][1]:
+                        veeru_kordinaat = midagi.split("//")
+                        player_seisab_veerus=veeru_kordinaat[1]
+                        #print(player_seisab_veerus, "veerg")
+                        vaja_uuendada = True
+                        player_asukoht = player_seisab_real + "//" + player_seisab_veerus
+                        #muuda alumine augu muru blokk õhuks ajutiselt
+                        try:
+                            if self.responsive_blocks[player_asukoht] != "TEMP GONE":
+                                self.responsive_blocks_temp[player_asukoht] = self.responsive_blocks[player_asukoht]
+                                self.responsive_blocks[player_asukoht] = "TEMP GONE"
+                                self.responsive_blocks_taimers[player_asukoht] = 0
+                                blokk_up_timer = True
+                                print(player_asukoht)
+                                #print("vaja_uuendada = True")
+                        except:
+                            pass
+                        
+        
             
         if blokk_up_timer:
-            blokk_up_timer_loendur += 1
-            if blokk_up_timer_loendur == 300:
-                print("blokk_up_timer_loendur")
-                self.responsive_blocks["37//28"] = temp_blokk_sisu
-                print(self.responsive_blocks["37//28"])
-                blokk_up_timer = False 
+            for midagi in self.responsive_blocks_taimers.keys():
+                if self.responsive_blocks_taimers[midagi] == "place holder":
+                    pass
+                else:
+                    if self.responsive_blocks_taimers[midagi] == 100:
+                        self.responsive_blocks[midagi] = self.responsive_blocks_temp[midagi]
+                        self.responsive_blocks_temp[midagi] = "place holder"
+                        self.responsive_blocks_taimers[midagi] = "place holder"
+                        
+                    else:
+                        self.responsive_blocks_taimers[midagi] += 1
+                        
+                            
             
-    
-        rea_lugeja = 0
-        for rida in self.maatriks:
-            veeru_lugeja = 0
-            for ruut in rida:
-                if ruut != 0:
-                    blokk = World.pildid[ruut]
-                    if blokk[1] == True:
-                        """
-                        bloki_taimer_alustati = False
-                        if player asukoht == ruudu peal, and bloki_taimer_alustati == False:
-                            bloki_taimer_alustati = True
-                            bloki_spets_taimer = 0
-                        elif bloki_taimer_alustati == True and bloki_spets_down_taimer_alustati == False:
-                            bloki_spets_taimer += 1
-                            if bloki_spets_taimer>10:
-                                blokk = 0
-                                bloki_spets_down_taimer_alustati = True
-                                bloki_taimer_alustati = False
-                                bloki_spets_down_taimer = 0
-                        elif bloki_taimer_alustati == False and bloki_spets_down_taimer_alustati == True:
-                            bloki_spets_down_taimer += 1
-                            if bloki_spets_down_taimer >10:
-                                blokk = <tagasi mis ta ennem oli>
-                                bloki_spets_down_taimer_alustati = False
-                        """
-                                
-                        pass
-                veeru_lugeja += 1
-            rea_lugeja += 1
-        pass
-    
+            
         
     def joonista(self):
         for ruut in self.ruudud_list:
             window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
+        for ruut in self.responsive_blocks.values():
+                if ruut == "TEMP GONE":
+                    pass
+                else:
+                    window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
         pass
         
 
@@ -259,6 +288,7 @@ class Player():
         self.rect.y += dy
         mängija_X = self.rect.x
         mängija_Y = self.rect.y
+        #print(f"X={self.rect.x} Y={self.rect.y}")
 
         blitx = blitx -dx  
         blity = blity -dy
@@ -315,17 +345,15 @@ def main():
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
     world_maatriks = numpy.zeros((ruudud, ruudud))
-    world_maatriks[0:3] = 2  # testimiseks
-    world_maatriks[1:39, 0:3] = 2
+    world_maatriks[0:3] = 5  
+    world_maatriks[1:39, 0:3] = 5
     world_maatriks[1:39, 36:40] = 1
     world_maatriks[36:40] = 1
-    world_maatriks[32:33, 3:28] = 2
-    world_maatriks[28:29, 6:36] = 2
+    world_maatriks[32, 3:28] = 2
+    world_maatriks[28, 6:36] = 2
     world_maatriks[35, 30:36] = 1
     world_maatriks[33, 33] = 3
     world_maatriks[34, 33] = 4
-    world_maatriks[36, 27:30] = 0
-    world_maatriks[37, 28] = 2
     world = World(world_maatriks)
     
     
@@ -340,7 +368,7 @@ def main():
         window.blit(taust, (0+blitx, 0+blity))
         # window.blit(man, (0, 600))
 
-        ruudustik()  # loob ruudusitku
+        #ruudustik()  # loob ruudusitku
 
         World.joonista(world)  # joonistab tekstuuriga ruudud ekraanile
         
@@ -351,8 +379,6 @@ def main():
                 if event.key == pygame.K_x:
                     run = False
                 elif event.key == pygame.K_e:
-                    player.rect.x = mängija_teleport_sihtkoht[0]
-                    player.rect.y = mängija_teleport_sihtkoht[1]
                     print("vajutati e")
                 
 
