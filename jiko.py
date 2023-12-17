@@ -29,8 +29,8 @@ on_maas = False
 vaja_uuendada = False
 mängija_X = 0
 mängija_Y = 0
+blokk_down_timer = False
 blokk_up_timer = False
-blokk_up_timer_loendur = 0
 temp_blokk_sisu = None 
 
 class World():
@@ -60,6 +60,7 @@ class World():
         self.responsive_blocks = {}
         self.responsive_blocks_temp = {}
         self.responsive_blocks_taimers = {}
+        self.responsive_blocks_up_taimers = {}
         self.responsive_blocks_activation_zones_Y= {}
         self.responsive_blocks_activation_zones_X= {}
         tekstuur1 = pygame.image.load("tekstuur.jpg") #TELLISKIVID
@@ -101,24 +102,26 @@ class World():
                         self.responsive_blocks_temp[responsive_blocks_dict_nimi] = "place holder"
                         self.responsive_blocks[responsive_blocks_dict_nimi]= ruut
                         self.responsive_blocks_taimers[responsive_blocks_dict_nimi] = "place holder"
+                        self.responsive_blocks_up_taimers[responsive_blocks_dict_nimi] = "place holder"
                         
                     else:
                         ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
                         self.ruudud_list.append(ruut)
                         
                 veeru_lugeja += 1
-            rea_lugeja += 1
-            
+            rea_lugeja += 1  
         pass
+
+    
     
     #maailma uuendaja
     def uuenda(self):
-        global vaja_uuendada, blokk_up_timer
+        global vaja_uuendada, blokk_down_timer, blokk_up_timer
         
         for midagi in self.responsive_blocks_taimers.keys():
                 if self.responsive_blocks_taimers[midagi] != "place holder":
                     vaja_uuendada = True
-                    blokk_up_timer = True 
+                    blokk_down_timer = True 
         
         if vaja_uuendada:
             for ruut in self.responsive_blocks.values():
@@ -150,21 +153,35 @@ class World():
                         #print(player_seisab_veerus, "veerg")
                         vaja_uuendada = True
                         player_asukoht = player_seisab_real + "//" + player_seisab_veerus
-                        #muuda alumine augu muru blokk õhuks ajutiselt
                         try:
-                            if self.responsive_blocks[player_asukoht] != "TEMP GONE":
-                                self.responsive_blocks_temp[player_asukoht] = self.responsive_blocks[player_asukoht]
-                                self.responsive_blocks[player_asukoht] = "TEMP GONE"
-                                self.responsive_blocks_taimers[player_asukoht] = 0
+                            if self.responsive_blocks_up_taimers[player_asukoht] == "place holder":
+                                self.responsive_blocks_up_taimers[player_asukoht] = 0
                                 blokk_up_timer = True
-                                print(player_asukoht)
-                                #print("vaja_uuendada = True")
                         except:
                             pass
+
+                            
                         
-        
-            
         if blokk_up_timer:
+            for midagi in self.responsive_blocks_up_taimers.keys():
+                if self.responsive_blocks_up_taimers[midagi] == "place holder":
+                    pass
+                else:
+                    if self.responsive_blocks_up_taimers[midagi] == 10:
+                        try:
+                            if self.responsive_blocks[midagi] != "TEMP GONE":
+                                self.responsive_blocks_temp[midagi] = self.responsive_blocks[midagi]
+                                self.responsive_blocks[midagi] = "TEMP GONE"
+                                self.responsive_blocks_up_taimers[midagi] = "place holder"
+                                self.responsive_blocks_taimers[midagi] = 0
+                                blokk_down_timer = True
+                                #print(midagi)
+                        except:
+                            pass
+                    else:
+                        self.responsive_blocks_up_taimers[midagi] += 1
+            
+        if blokk_down_timer:
             for midagi in self.responsive_blocks_taimers.keys():
                 if self.responsive_blocks_taimers[midagi] == "place holder":
                     pass
