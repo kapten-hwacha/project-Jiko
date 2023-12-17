@@ -18,7 +18,6 @@ laius = pikkus
 lahutusvõime = (pikkus, laius)
 lahutusvõime2 = (laius-ruudu_suurus*30, pikkus-ruudu_suurus*30)
 #lahutusvõime2=(laius, pikkus)
-mängija_teleport_sihtkoht=((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*6)))#player = Player((ruudu_suurus*20, lahutusvõime[0] - (ruudu_suurus*6)))
 
 #liigutab kaamerat vastaval player'i liikumisele
 blitx=0-ruudu_suurus*15
@@ -31,7 +30,9 @@ mängija_X = 0
 mängija_Y = 0
 blokk_down_timer = False
 blokk_up_timer = False
-temp_blokk_sisu = None 
+temp_blokk_sisu = None
+aktiveeri_LSD_trip = False
+LSD_trip_taimer = 0
 
 class World():
     # ruutude piltide ja väärtuste jaoks dictionary
@@ -93,9 +94,9 @@ class World():
                     if ruut == 2:
                         ruut = World.lisa_pilt(ruut, rea_lugeja, veeru_lugeja)
                         responsive_blocks_dict_nimi= str(rea_lugeja)+ "//"+ str(veeru_lugeja)
-                        activation_zone_y = (rea_lugeja+1)*30 - (3*30)
-                        activation_zone_x_min = ((veeru_lugeja + 1) * 30) - 30 - 30
-                        activation_zone_x_max = ((veeru_lugeja + 1) * 30) + 30 - 30
+                        activation_zone_y = (rea_lugeja+1)*ruudu_suurus - (3*ruudu_suurus)
+                        activation_zone_x_min = ((veeru_lugeja + 1) * ruudu_suurus) - ruudu_suurus - ruudu_suurus
+                        activation_zone_x_max = ((veeru_lugeja + 1) * ruudu_suurus) + ruudu_suurus - ruudu_suurus
                         activation_zone_x = (activation_zone_x_min, activation_zone_x_max)
                         self.responsive_blocks_activation_zones_Y[responsive_blocks_dict_nimi] = activation_zone_y
                         self.responsive_blocks_activation_zones_X[responsive_blocks_dict_nimi] = activation_zone_x
@@ -136,12 +137,13 @@ class World():
                     window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
         
         """
-        activation_zone_y = (rea_lugeja+1)*30 - (2*30)
-        activation_zone_x_min = ((veeru_lugeja + 1) * 30) - 30
-        activation_zone_x_max = ((veeru_lugeja + 1) * 30) + 30
+        activation_zone_y = (rea_lugeja+1)*ruudu_suurus - (2*ruudu_suurus)
+        activation_zone_x_min = ((veeru_lugeja + 1) * ruudu_suurus) - ruudu_suurus - ruudu_suurus
+        activation_zone_x_max = ((veeru_lugeja + 1) * ruudu_suurus) + ruudu_suurus - ruudu_suurus
         activation_zone_x = (activation_zone_x_min, activation_zone_x_max)
         activation_zone = (activation_zone_y, activation_zone_x)
         self.responsive_blocks_activation_zones[responsive_blocks_dict_nimi] = activation_zone
+        world_maatriks[35, 32:35] = 4
         """
         
         
@@ -351,7 +353,7 @@ def Uuenda_kõik(mängija, maailm):
 
 
 def main():
-    global window, lahutusvõime, world
+    global window, lahutusvõime, world, aktiveeri_LSD_trip, LSD_trip_taimer
     pygame.init()
 
     FPS = 60  # et programm töötaks olenemata riistvarast samasuguselt
@@ -359,10 +361,14 @@ def main():
 
     window = pygame.display.set_mode(lahutusvõime2)
     pygame.display.set_caption(nimi)
+    
+    mees = pygame.image.load("player_pööratud.png")
+    mees = pygame.transform.scale(mees, lahutusvõime2)
 
     # laeb tausta
     taust = pygame.image.load("background.png")
     taust = pygame.transform.scale(taust, lahutusvõime)
+    
 
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
@@ -387,7 +393,18 @@ def main():
 
         # lisab pildi aknas kuvatavale frame'ile
         # järjekord oluline !
-        window.blit(taust, (0+blitx, 0+blity))
+        window.blit(mees, (0+blitx+ ruudu_suurus*15, 0+blity+ruudu_suurus*29))
+        
+        if aktiveeri_LSD_trip:
+            if LSD_trip_taimer== 100:
+                aktiveeri_LSD_trip = False
+                LSD_trip_taimer = 0
+            else:
+                LSD_trip_taimer += 1
+            
+            pass
+        else:
+            window.blit(taust, (0+blitx, 0+blity))
         # window.blit(man, (0, 600))
 
         #ruudustik()  # loob ruudusitku
@@ -395,13 +412,26 @@ def main():
         World.joonista(world)  # joonistab tekstuuriga ruudud ekraanile
         
         Uuenda_kõik(player, world) # uuendab kõiki asju
+        
+        mehe_x = 0+blitx+ ruudu_suurus*15
+        mehe_y = 0+blity+ruudu_suurus*29
+        #window.blit(mees, (mehe_x, mehe_y))
+        
 
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_x:
                     run = False
                 elif event.key == pygame.K_e:
-                    print("vajutati e")
+                    #print(mängija_X, mängija_Y)
+                    print(mehe_x, mehe_y)
+                    if mängija_Y == (33*ruudu_suurus):
+                        if mängija_X >(31*ruudu_suurus) and mängija_X<(35*ruudu_suurus):
+                            print("vajutati e")
+                            
+                elif event.key == pygame.K_l:
+                    aktiveeri_LSD_trip = True
+                            
                 
 
         pygame.display.update()  # värksendab aknas kuvatavat frame'i
