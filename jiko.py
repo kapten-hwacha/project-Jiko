@@ -26,8 +26,6 @@ blity = 0 - RUUDU_SUURUS * 26
 
 
 class World():
-    global RUUDU_SUURUS
-
     def __init__(self, maatriks):
         self.ruudud_list = []
 
@@ -286,10 +284,10 @@ def main():
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
     world_maatriks = numpy.zeros((RUUDUD, RUUDUD))
-    world_maatriks[0:3] = 1  # testimiseks
+    """world_maatriks[0:3] = 1  # testimiseks
     world_maatriks[1:39, 0:3] = 1
     world_maatriks[1:39, 36:40] = 1
-    world_maatriks[36:40] = 2
+    world_maatriks[36:40] = 2"""
     world_maatriks[32, 3:33] = 2
     world_maatriks[28, 6:36] = 2
 
