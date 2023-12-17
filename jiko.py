@@ -121,7 +121,12 @@ class World():
         for midagi in self.responsive_blocks_taimers.keys():
                 if self.responsive_blocks_taimers[midagi] != "place holder":
                     vaja_uuendada = True
-                    blokk_down_timer = True 
+                    blokk_down_timer = True
+                    
+        for midagi in self.responsive_blocks_up_taimers.keys():
+                if self.responsive_blocks_taimers[midagi] != "place holder":
+                    vaja_uuendada = True
+                    blokk_up_timer = True
         
         if vaja_uuendada:
             for ruut in self.responsive_blocks.values():
