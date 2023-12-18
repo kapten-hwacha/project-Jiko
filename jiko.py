@@ -17,6 +17,7 @@ pikkus = ruudud * ruudu_suurus
 laius = pikkus
 lahutusvõime = (pikkus, laius)
 lahutusvõime2 = (laius-ruudu_suurus*30, pikkus-ruudu_suurus*30)
+#lahutusvõime2 = (laius-ruudu_suurus*10, pikkus-ruudu_suurus*10)
 #lahutusvõime2=(laius, pikkus)
 
 #liigutab kaamerat vastaval player'i liikumisele
@@ -33,6 +34,7 @@ blokk_up_timer = False
 temp_blokk_sisu = None
 aktiveeri_LSD_trip = False
 LSD_trip_taimer = 0
+räägib_mehega = False 
 
 class World():
     # ruutude piltide ja väärtuste jaoks dictionary
@@ -347,13 +349,15 @@ def ruudustik():
         
 # uuendaja kõigile
 def Uuenda_kõik(mängija, maailm):
-    Player.uuenda(mängija)
-    World.uuenda(maailm)
+    if mängija != "ei":
+        Player.uuenda(mängija)
+    if maailm != "ei":
+        World.uuenda(maailm)
     
 
 
 def main():
-    global window, lahutusvõime, world, aktiveeri_LSD_trip, LSD_trip_taimer
+    global window, lahutusvõime, world, aktiveeri_LSD_trip, LSD_trip_taimer, räägib_mehega
     pygame.init()
 
     FPS = 60  # et programm töötaks olenemata riistvarast samasuguselt
@@ -393,7 +397,6 @@ def main():
 
         # lisab pildi aknas kuvatavale frame'ile
         # järjekord oluline !
-        window.blit(mees, (0+blitx+ ruudu_suurus*15, 0+blity+ruudu_suurus*29))
         
         if aktiveeri_LSD_trip:
             if LSD_trip_taimer== 100:
@@ -411,23 +414,30 @@ def main():
 
         World.joonista(world)  # joonistab tekstuuriga ruudud ekraanile
         
-        Uuenda_kõik(player, world) # uuendab kõiki asju
+        #Uuenda_kõik(player, world) # uuendab kõiki asju
         
-        mehe_x = 0+blitx+ ruudu_suurus*15
-        mehe_y = 0+blity+ruudu_suurus*29
-        #window.blit(mees, (mehe_x, mehe_y))
+        mehe_x = 0
+        mehe_y = 0
+        if räägib_mehega:
+            window.blit(mees, (mehe_x, mehe_y))
+        else:
+            Uuenda_kõik(player, world)
         
-
+        
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_x:
                     run = False
                 elif event.key == pygame.K_e:
                     #print(mängija_X, mängija_Y)
-                    print(mehe_x, mehe_y)
+                    #print(mehe_x, mehe_y)
                     if mängija_Y == (33*ruudu_suurus):
                         if mängija_X >(31*ruudu_suurus) and mängija_X<(35*ruudu_suurus):
-                            print("vajutati e")
+                            if räägib_mehega == True:
+                                räägib_mehega = False
+                            else:
+                                räägib_mehega = True 
+                            print("Tervist")
                             
                 elif event.key == pygame.K_l:
                     aktiveeri_LSD_trip = True
