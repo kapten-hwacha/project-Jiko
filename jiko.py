@@ -21,7 +21,7 @@ LAIUS = PIKKUS
 lahutusvõime = (PIKKUS, LAIUS)
 lahutusvõime2 = (LAIUS - RUUDU_SUURUS * 30, PIKKUS - RUUDU_SUURUS * 30)
 
-# miks 16 ja 26 ???
+# miks 16 ja 26q // nvm töötab
 blitx = 0 - RUUDU_SUURUS * 16
 blity = 0 - RUUDU_SUURUS * 26
 
@@ -40,7 +40,7 @@ lõpp_lõpp = False
 class World():
     def __init__(self, maatriks):
         self.ruudud_list = []
-        
+
         # temp blokkide dictionary'd
         self.responsive_blocks = {}
         self.responsive_blocks_temp = {}
@@ -80,7 +80,7 @@ class World():
                 if max > ruut > min:
                     # lisa_pilt tagastab ennikuna ruudule vastava pildi
                     # ja recti
-                    
+
                     # kui ruut on temp blokk, siis ...
                     if ruut == 2:
                         pilt = self.tagasta_pilt(ruut)
@@ -114,8 +114,7 @@ class World():
     def joonista(self):
         for ruut in self.ruudud_list:
             window.blit(ruut[0], (ruut[1][0] + blitx, ruut[1][1] + blity))
-            
-        
+
         for ruut in self.responsive_blocks.values():
                 if ruut == "TEMP GONE":
                     pass
@@ -124,24 +123,24 @@ class World():
 
     def collision(self):
         global vaja_uuendada, blokk_down_timer, blokk_up_timer
-        
+
         for midagi in self.responsive_blocks_taimers.keys():
                 if self.responsive_blocks_taimers[midagi] != "place holder":
                     vaja_uuendada = True
                     blokk_down_timer = True
-                    
+
         for midagi in self.responsive_blocks_up_taimers.keys():
                 if self.responsive_blocks_taimers[midagi] != "place holder":
                     vaja_uuendada = True
                     blokk_up_timer = True
-        
+
         if vaja_uuendada:
             for ruut in self.responsive_blocks.values():
                 if ruut == "TEMP GONE":
                     pass
                 else:
                     window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
-                    
+
         if blokk_up_timer:
             for midagi in self.responsive_blocks_up_taimers.keys():
                 if self.responsive_blocks_up_taimers[midagi] == "place holder":
@@ -160,7 +159,7 @@ class World():
                             pass
                     else:
                         self.responsive_blocks_up_taimers[midagi] += 1
-            
+
         if blokk_down_timer:
             for midagi in self.responsive_blocks_taimers.keys():
                 if self.responsive_blocks_taimers[midagi] == "place holder":
@@ -170,10 +169,10 @@ class World():
                         self.responsive_blocks[midagi] = self.responsive_blocks_temp[midagi]
                         self.responsive_blocks_temp[midagi] = "place holder"
                         self.responsive_blocks_taimers[midagi] = "place holder"
-                        
+
                     else:
                         self.responsive_blocks_taimers[midagi] += 1
-                        
+
         for midagi in self.responsive_blocks_activation_zones_Y.keys():
             if mängija_Y == self.responsive_blocks_activation_zones_Y[midagi]:
                 rea_kordinaat = midagi.split("//")
@@ -193,13 +192,10 @@ class World():
                         except:
                             pass
 
-        
         for viiner in viinerid:
             for ruut in self.ruudud_list:
                 if pygame.Rect.colliderect(viiner.rect, ruut[1]):
                     viinerid.pop(viinerid.index(viiner))
-                    
-        
 
 
 class Taco(World):
@@ -283,7 +279,7 @@ class Player():
         img = pygame.image.load("seisab.png")
         img1 = pygame.image.load("samm1.png")
         img2 = pygame.image.load("samm2.png")
-        self.img_parem = pygame.transform.scale(img, (RUUDU_SUURUS, RUUDU_SUURUS * 2))
+        self.img_parem = pygame.transform.scale(img, (RUUDU_SUURUS - 5, RUUDU_SUURUS * 2))
         self.img_vasak = pygame.transform.flip(self.img_parem, True, False)  # flipib pildi ümber y-telje
         img_samm_parem = pygame.transform.scale(img1, (RUUDU_SUURUS, RUUDU_SUURUS * 2))
         img_samm_vasak = pygame.transform.flip(img_samm_parem, True, False)
@@ -359,7 +355,7 @@ class Player():
                     dy = ruut[1].top - self.rect.bottom
                     self.kiirus_y = 0
                     self.maas = True
-                    
+
         for ruut in world.responsive_blocks.values():
             if ruut == "TEMP GONE":
                 pass
@@ -390,7 +386,7 @@ class Player():
         self.rect.y += dy
         mängija_X = self.rect.x
         mängija_Y = self.rect.y
-        
+
         blitx -= dx
         blity -= dy
 
@@ -439,11 +435,11 @@ def main():
     # laeb tausta
     taust = pygame.image.load("background.png")
     taust = pygame.transform.scale(taust, lahutusvõime)
-    
+
     # start menu pilt
     start_menu_pilt = pygame.image.load("start_menu_pilt.png")
     start_menu_pilt = pygame.transform.scale(start_menu_pilt, lahutusvõime2)
-    
+
     # lõpu pilt
     lõpu_pilt = pygame.image.load("l6pu_pilt.png")
     lõpu_pilt = pygame.transform.scale(lõpu_pilt, lahutusvõime2)
@@ -464,7 +460,6 @@ def main():
     fpsKell = pygame.time.Clock()  # loob objekti aja jälgimiseks
     run = True
     while run:
-        
         if start_menu:
             window.blit(start_menu_pilt, (0, 0))
             for event in pygame.event.get():
@@ -474,7 +469,7 @@ def main():
                     if event.key == pygame.K_e:
                         start_menu = False
             pygame.display.update()
-                        
+
         elif lõpp_lõpp:
             window.blit(lõpu_pilt, (0, 0))
             for event in pygame.event.get():
@@ -484,9 +479,8 @@ def main():
                     if event.key == pygame.K_e:
                         lõpp_lõpp = False
             pygame.display.update()
-        
-        else:
 
+        else:
             # lisab pildi aknas kuvatavale frame'ile
             # järjekord oluline !
             window.blit(taust, (0 + blitx, 0 + blity))
@@ -508,12 +502,11 @@ def main():
                         run = False
                     if event.key == pygame.K_c:
                         # prindib player'i koordinaadid ja maatriksi elemendi (rida, veerg)
-                        #print(vaja_uuendada, blokk_down_timer, blokk_up_timer)
+                        # print(vaja_uuendada, blokk_down_timer, blokk_up_timer)
                         print(f"x: {player.rect.x}, y: {player.rect.y}, maatriks r:{int(player.rect.y / RUUDU_SUURUS)}, v:{int(player.rect.x / RUUDU_SUURUS)}")
                     if event.key == pygame.K_e:
                         if int(player.rect.y / RUUDU_SUURUS) == 3 and int(player.rect.x / RUUDU_SUURUS) == 4:
-                            lõpp_lõpp = True 
-                    
+                            lõpp_lõpp = True
 
             pygame.display.update()  # värksendab aknas kuvatavat frame'i
 
