@@ -2,6 +2,7 @@ import numpy
 import pygame
 # from random import randint as rng
 import math
+import pandas as pd
 
 """
 TODO juurde
@@ -36,36 +37,42 @@ class World():
             self.pildid[pilt] = pygame.transform.scale(self.pildid[pilt], (RUUDU_SUURUS, RUUDU_SUURUS))
 
         self.maatriks = maatriks
-        self.spawn()
+        self.spawn(min=0, max=3, üleval=0)
 
-    def spawn(self):
+    def spawn(self, min, max, üleval):
         # võtab maatriksist väärtuse andmed ja muudab selle
         # koordinaatidega seotud objektideks
         rea_lugeja = 0
         for rida in self.maatriks:
             veeru_lugeja = 0
             for ruut in rida:
-                if ruut > 0:
+                if max > ruut > min:
                     # lisa_pilt tagastab ennikuna ruudule vastava pildi
                     # ja recti
                     pilt = self.tagasta_pilt(ruut)
-                    self.ruudud_list.append(self.loo_rect(pilt, rea_lugeja, veeru_lugeja))
-                    veeru_lugeja += 1
+                    self.ruudud_list.append(self.loo_rect(pilt, rea_lugeja, veeru_lugeja, üleval))
+                veeru_lugeja += 1
             rea_lugeja += 1
 
     def tagasta_pilt(self, ruut):
         return self.pildid[ruut]
 
-    def loo_rect(self, pilt, rea_lugeja, veeru_lugeja):
+    def loo_rect(self, pilt, rea_lugeja, veeru_lugeja, üleval):
         global RUUDU_SUURUS
         rect = pilt.get_rect()
         rect.x = veeru_lugeja * RUUDU_SUURUS
-        rect.y = rea_lugeja * RUUDU_SUURUS
+        rect.y = (rea_lugeja + üleval) * RUUDU_SUURUS
         return [pilt, rect]
 
     def joonista(self):
         for ruut in self.ruudud_list:
             window.blit(ruut[0], (ruut[1][0] + blitx, ruut[1][1] + blity))
+
+    def collision(self):
+        for viiner in viinerid:
+            for ruut in self.ruudud_list:
+                if pygame.Rect.colliderect(viiner.rect, ruut[1]):
+                    viinerid.pop(viinerid.index(viiner))
 
 
 class Taco(World):
@@ -75,9 +82,10 @@ class Taco(World):
         self.pilt = pygame.transform.scale(pygame.image.load(pilt), (2 * RUUDU_SUURUS, 2 * RUUDU_SUURUS))
         self.pildid = [self.pilt, pygame.transform.flip(self.pilt, True, False)]
         self.asend = 0
-        self.spawn()
+        self.spawn(min=2, max=4, üleval=-1)
         for ruut in self.ruudud_list:
             # võib kolm korda viineriga pihta saada
+            # cursed lahendus aga...
             ruut.append(2)
         self.lugeja = 0
 
@@ -96,8 +104,8 @@ class Taco(World):
             for ruut in self.ruudud_list:
                 if pygame.Rect.colliderect(viiner.rect, ruut[1]):
                     viinerid.pop(viinerid.index(viiner))
-                    del viiner
                     ruut[2] -= 1
+                    # del viiner
                 if ruut[2] == 0:
                     self.ruudud_list.pop(self.ruudud_list.index(ruut))
 
@@ -106,7 +114,7 @@ class Taco(World):
 
     def joonista(self, pilt):
         for ruut in self.ruudud_list:
-            window.blit(pilt, (ruut[1][0] + blitx, ruut[1][1] + blity))
+            window.blit(pilt, (ruut[1].x + blitx, ruut[1].y + blity))
 
 
 class Viiner():
@@ -121,7 +129,7 @@ class Viiner():
         self.lugeja = 0
 
     def liikumine(self):
-        # mingil põhjusel ei pööra pygame pilti ümber selle keskpunkti
+        # mingil põhjusel ei pööra pygame pilti ümber selle keskpunkti kui 45 kraadi
         if self.lugeja == 6:
             self.pilt = pygame.transform.rotate(self.pilt, 90)
             self.lugeja = 0
@@ -133,8 +141,12 @@ class Viiner():
         if self.rect.x > (LAIUS - RUUDU_SUURUS) or self.rect.x < RUUDU_SUURUS or self.rect.y > (PIKKUS - RUUDU_SUURUS):
             return 0
         else:
-            window.blit(self.pilt, (self.rect[0] + blitx, self.rect[1] + blity))
+            window.blit(self.pilt, (self.rect.x + blitx, self.rect.y + blity))
             return 1
+
+    def collision():
+        taco.collision()
+        world.collision()
 
 
 class Player():
@@ -201,8 +213,8 @@ class Player():
 
         self.kiirus_y += 1
         # kukkumisel on max kiirus
-        if self.kiirus_y > 30:
-            self.kiirus_y = 30
+        if self.kiirus_y > 25:
+            self.kiirus_y = 25
         dy += self.kiirus_y
 
         objektid = world.ruudud_list + taco.ruudud_list
@@ -283,21 +295,14 @@ def main():
 
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
-    world_maatriks = numpy.zeros((RUUDUD, RUUDUD))
-    """world_maatriks[0:3] = 1  # testimiseks
-    world_maatriks[1:39, 0:3] = 1
-    world_maatriks[1:39, 36:40] = 1
-    world_maatriks[36:40] = 2"""
-    world_maatriks[32, 3:33] = 2
-    world_maatriks[28, 6:36] = 2
+    map_excel = pd.read_excel("jiko.xlsx", header=None)
+    world_maatriks = map_excel.values
 
     world = World(world_maatriks)
 
     player = Player((RUUDU_SUURUS*20, lahutusvõime[0] - (RUUDU_SUURUS*10)))
 
-    taco_maatriks = numpy.zeros((RUUDUD, RUUDUD))
-    taco_maatriks[30, 20:28] = 1
-    taco = Taco(maatriks=taco_maatriks, pilt="mexico.png")
+    taco = Taco(maatriks=world_maatriks, pilt="mexico.png")
 
     viinerid = []
 
@@ -312,12 +317,11 @@ def main():
 
         world.joonista()
         taco.flip()
-        # taco.flip()
         for viiner in viinerid:
             if viiner.liikumine() == 0:
                 viinerid.pop(viinerid.index(viiner))
                 del viiner
-        taco.collision()
+        Viiner.collision()
 
         player.uuenda()
 
@@ -334,9 +338,6 @@ def main():
         # pärast määrata muutuja väärtuseks, et liikumine toimuks ühtselt?
         fpsKell.tick(FPS)  # uuendab 'kella' väärtust
 
-    mapfail = open("map.txt", "w")
-    mapfail.write(str(world_maatriks))
-    mapfail.close()
     pygame.quit()
 
 
