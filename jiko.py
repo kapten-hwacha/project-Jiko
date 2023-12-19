@@ -15,7 +15,7 @@ TODO parandada
 """
 
 RUUDUD = 40  # kui mitmeks ruuduks jagame
-RUUDU_SUURUS = 30  # küljepikkus pikslites
+RUUDU_SUURUS = 50  # küljepikkus pikslites
 PIKKUS = RUUDUD * RUUDU_SUURUS
 LAIUS = PIKKUS
 lahutusvõime = (PIKKUS, LAIUS)
@@ -25,12 +25,33 @@ lahutusvõime2 = (LAIUS - RUUDU_SUURUS * 30, PIKKUS - RUUDU_SUURUS * 30)
 blitx = 0 - RUUDU_SUURUS * 16
 blity = 0 - RUUDU_SUURUS * 26
 
+# igasugu erinevaid muutujaid
+vaja_uuendada = False
+mängija_X = 0
+mängija_Y = 0
+blokk_down_timer = False
+blokk_up_timer = False
+temp_blokk_sisu = None
+vana_mees_joonistatud = 0
+start_menu = True
+lõpp_lõpp = False 
+
 
 class World():
     def __init__(self, maatriks):
         self.ruudud_list = []
+        
+        # temp blokkide dictionary'd
+        self.responsive_blocks = {}
+        self.responsive_blocks_temp = {}
+        self.responsive_blocks_taimers = {}
+        self.responsive_blocks_up_taimers = {}
+        self.responsive_blocks_activation_zones_Y= {}
+        self.responsive_blocks_activation_zones_X= {}
 
         self.pildid = {}
+        self.pildid[21] = pygame.image.load("player_6lemine.png")
+        self.pildid[20] = pygame.image.load("player_alumine.png")
         self.pildid[1] = pygame.image.load("tekstuur.jpg")
         self.pildid[2] = pygame.image.load("tekstuur1.jpg")
         for pilt in self.pildid:
@@ -40,17 +61,43 @@ class World():
         self.spawn(min=0, max=3, üleval=0)
 
     def spawn(self, min, max, üleval):
+        global vana_mees_joonistatud
         # võtab maatriksist väärtuse andmed ja muudab selle
         # koordinaatidega seotud objektideks
         rea_lugeja = 0
         for rida in self.maatriks:
             veeru_lugeja = 0
             for ruut in rida:
+                if vana_mees_joonistatud < 2:
+                    if ruut == 20:
+                        pilt = self.tagasta_pilt(ruut)
+                        self.ruudud_list.append(self.loo_rect(pilt, rea_lugeja, veeru_lugeja, üleval))
+                        vana_mees_joonistatud += 1
+                    if ruut == 21:
+                        pilt = self.tagasta_pilt(ruut)
+                        self.ruudud_list.append(self.loo_rect(pilt, rea_lugeja, veeru_lugeja, üleval))
+                        vana_mees_joonistatud += 1 
                 if max > ruut > min:
                     # lisa_pilt tagastab ennikuna ruudule vastava pildi
                     # ja recti
-                    pilt = self.tagasta_pilt(ruut)
-                    self.ruudud_list.append(self.loo_rect(pilt, rea_lugeja, veeru_lugeja, üleval))
+                    
+                    # kui ruut on temp blokk, siis ...
+                    if ruut == 2:
+                        pilt = self.tagasta_pilt(ruut)
+                        responsive_blocks_dict_nimi= str(rea_lugeja)+ "//"+ str(veeru_lugeja)
+                        activation_zone_y = (rea_lugeja+1)*RUUDU_SUURUS - (3*RUUDU_SUURUS)
+                        activation_zone_x_min = ((veeru_lugeja + 1) * RUUDU_SUURUS) - RUUDU_SUURUS - RUUDU_SUURUS
+                        activation_zone_x_max = ((veeru_lugeja + 1) * RUUDU_SUURUS) + RUUDU_SUURUS - RUUDU_SUURUS
+                        activation_zone_x = (activation_zone_x_min, activation_zone_x_max)
+                        self.responsive_blocks_activation_zones_Y[responsive_blocks_dict_nimi] = activation_zone_y
+                        self.responsive_blocks_activation_zones_X[responsive_blocks_dict_nimi] = activation_zone_x
+                        self.responsive_blocks_temp[responsive_blocks_dict_nimi] = "place holder"
+                        self.responsive_blocks_taimers[responsive_blocks_dict_nimi] = "place holder"
+                        self.responsive_blocks_up_taimers[responsive_blocks_dict_nimi] = "place holder"
+                        self.responsive_blocks[responsive_blocks_dict_nimi]= self.loo_rect(pilt, rea_lugeja, veeru_lugeja, üleval)
+                    else:
+                        pilt = self.tagasta_pilt(ruut)
+                        self.ruudud_list.append(self.loo_rect(pilt, rea_lugeja, veeru_lugeja, üleval))
                 veeru_lugeja += 1
             rea_lugeja += 1
 
@@ -67,12 +114,92 @@ class World():
     def joonista(self):
         for ruut in self.ruudud_list:
             window.blit(ruut[0], (ruut[1][0] + blitx, ruut[1][1] + blity))
+            
+        
+        for ruut in self.responsive_blocks.values():
+                if ruut == "TEMP GONE":
+                    pass
+                else:
+                    window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
 
     def collision(self):
+        global vaja_uuendada, blokk_down_timer, blokk_up_timer
+        
+        for midagi in self.responsive_blocks_taimers.keys():
+                if self.responsive_blocks_taimers[midagi] != "place holder":
+                    vaja_uuendada = True
+                    blokk_down_timer = True
+                    
+        for midagi in self.responsive_blocks_up_taimers.keys():
+                if self.responsive_blocks_taimers[midagi] != "place holder":
+                    vaja_uuendada = True
+                    blokk_up_timer = True
+        
+        if vaja_uuendada:
+            for ruut in self.responsive_blocks.values():
+                if ruut == "TEMP GONE":
+                    pass
+                else:
+                    window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity)) #window.blit(ruut[0], (ruut[1][0]+blitx, ruut[1][1]+blity))
+                    
+        if blokk_up_timer:
+            for midagi in self.responsive_blocks_up_taimers.keys():
+                if self.responsive_blocks_up_taimers[midagi] == "place holder":
+                    pass
+                else:
+                    if self.responsive_blocks_up_taimers[midagi] == 10:
+                        try:
+                            if self.responsive_blocks[midagi] != "TEMP GONE":
+                                self.responsive_blocks_temp[midagi] = self.responsive_blocks[midagi]
+                                self.responsive_blocks[midagi] = "TEMP GONE"
+                                self.responsive_blocks_up_taimers[midagi] = "place holder"
+                                self.responsive_blocks_taimers[midagi] = 0
+                                blokk_down_timer = True
+                                #print(midagi)
+                        except:
+                            pass
+                    else:
+                        self.responsive_blocks_up_taimers[midagi] += 1
+            
+        if blokk_down_timer:
+            for midagi in self.responsive_blocks_taimers.keys():
+                if self.responsive_blocks_taimers[midagi] == "place holder":
+                    pass
+                else:
+                    if self.responsive_blocks_taimers[midagi] == 100:
+                        self.responsive_blocks[midagi] = self.responsive_blocks_temp[midagi]
+                        self.responsive_blocks_temp[midagi] = "place holder"
+                        self.responsive_blocks_taimers[midagi] = "place holder"
+                        
+                    else:
+                        self.responsive_blocks_taimers[midagi] += 1
+                        
+        for midagi in self.responsive_blocks_activation_zones_Y.keys():
+            if mängija_Y == self.responsive_blocks_activation_zones_Y[midagi]:
+                rea_kordinaat = midagi.split("//")
+                player_seisab_real = rea_kordinaat[0]
+                #print(player_seisab_real, "rida")
+                for midagi in self.responsive_blocks_activation_zones_X.keys():
+                    if mängija_X>self.responsive_blocks_activation_zones_X[midagi][0] and mängija_X<self.responsive_blocks_activation_zones_X[midagi][1]:
+                        veeru_kordinaat = midagi.split("//")
+                        player_seisab_veerus=veeru_kordinaat[1]
+                        #print(player_seisab_veerus, "veerg")
+                        vaja_uuendada = True
+                        player_asukoht = player_seisab_real + "//" + player_seisab_veerus
+                        try:
+                            if self.responsive_blocks_up_taimers[player_asukoht] == "place holder":
+                                self.responsive_blocks_up_taimers[player_asukoht] = 0
+                                blokk_up_timer = True
+                        except:
+                            pass
+
+        
         for viiner in viinerid:
             for ruut in self.ruudud_list:
                 if pygame.Rect.colliderect(viiner.rect, ruut[1]):
                     viinerid.pop(viinerid.index(viiner))
+                    
+        
 
 
 class Taco(World):
@@ -182,7 +309,7 @@ class Player():
 
     def uuenda(self):
         # global sammud_loendur
-        global blitx, blity
+        global blitx, blity, mängija_X, mängija_Y
 
         dx = 0
         dy = 0
@@ -190,7 +317,7 @@ class Player():
 
         key = pygame.key.get_pressed()
         if (key[pygame.K_w] or key[pygame.K_SPACE]) and self.hüpe is False:
-            self.kiirus_y = -20
+            self.kiirus_y = -30
             self.hüpe = True
             self.maas = False
         # lisasin self.hüpe muutmise collision detecti alla,
@@ -232,6 +359,23 @@ class Player():
                     dy = ruut[1].top - self.rect.bottom
                     self.kiirus_y = 0
                     self.maas = True
+                    
+        for ruut in world.responsive_blocks.values():
+            if ruut == "TEMP GONE":
+                pass
+            else:
+                if ruut[1].colliderect(self.rect.x + dx, self.rect.y, self.suurus[0], self.suurus[1]):
+                    dx = 0
+                if ruut[1].colliderect(self.rect.x, self.rect.y + dy, self.suurus[0], self.suurus[1]):
+                    # kui collision tekib hüppamisel
+                    if self.kiirus_y < 0:
+                        dy = ruut[1].bottom - self.rect.top
+                        self.kiirus_y = 0
+                    # kui collision tekib kukkumisel
+                    else:
+                        dy = ruut[1].top - self.rect.bottom
+                        self.kiirus_y = 0
+                        self.maas = True
 
         # ei kuku frame'ist välja
         if self.rect.x < 0:
@@ -244,6 +388,9 @@ class Player():
         # uuendab mängija koordinaate
         self.rect.x += dx
         self.rect.y += dy
+        mängija_X = self.rect.x
+        mängija_Y = self.rect.y
+        
         blitx -= dx
         blity -= dy
 
@@ -280,7 +427,7 @@ def ruudustik():
 
 
 def main():
-    global window, lahutusvõime, world, taco, viinerid
+    global window, lahutusvõime, world, taco, viinerid, start_menu, lõpp_lõpp
     pygame.init()
 
     FPS = 60  # et programm töötaks olenemata riistvarast samasuguselt
@@ -292,6 +439,14 @@ def main():
     # laeb tausta
     taust = pygame.image.load("background.png")
     taust = pygame.transform.scale(taust, lahutusvõime)
+    
+    # start menu pilt
+    start_menu_pilt = pygame.image.load("start_menu_pilt.png")
+    start_menu_pilt = pygame.transform.scale(start_menu_pilt, lahutusvõime2)
+    
+    # lõpu pilt
+    lõpu_pilt = pygame.image.load("l6pu_pilt.png")
+    lõpu_pilt = pygame.transform.scale(lõpu_pilt, lahutusvõime2)
 
     # loob maatirksi, kus iga element vastab mingile ruudustiku väärtusele
     # ja elemendi väärtus määrab ruudu tüübi (pildi)
@@ -309,34 +464,61 @@ def main():
     fpsKell = pygame.time.Clock()  # loob objekti aja jälgimiseks
     run = True
     while run:
+        
+        if start_menu:
+            window.blit(start_menu_pilt, (0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_x or event.key == pygame.K_q:
+                        run = False
+                    if event.key == pygame.K_e:
+                        start_menu = False
+            pygame.display.update()
+                        
+        elif lõpp_lõpp:
+            window.blit(lõpu_pilt, (0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_x or event.key == pygame.K_q:
+                        run = False
+                    if event.key == pygame.K_e:
+                        lõpp_lõpp = False
+            pygame.display.update()
+        
+        else:
 
-        # lisab pildi aknas kuvatavale frame'ile
-        # järjekord oluline !
-        window.blit(taust, (0 + blitx, 0 + blity))
-        # ruudustik()  # loob ruudusitku
+            # lisab pildi aknas kuvatavale frame'ile
+            # järjekord oluline !
+            window.blit(taust, (0 + blitx, 0 + blity))
+            # ruudustik()  # loob ruudusitku
 
-        world.joonista()
-        taco.flip()
-        for viiner in viinerid:
-            if viiner.liikumine() == 0:
-                viinerid.pop(viinerid.index(viiner))
-                del viiner
-        Viiner.collision()
+            world.joonista()
+            taco.flip()
+            for viiner in viinerid:
+                if viiner.liikumine() == 0:
+                    viinerid.pop(viinerid.index(viiner))
+                    del viiner
+            Viiner.collision()
 
-        player.uuenda()
+            player.uuenda()
 
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_x or event.key == pygame.K_q:
-                    run = False
-                if event.key == pygame.K_c:
-                    # prindib player'i koordinaadid ja maatriksi elemendi (rida, veerg)
-                    print(f"x: {player.rect.x}, y: {player.rect.y}, maatriks r:{int(player.rect.y / RUUDU_SUURUS)}, v:{int(player.rect.x / RUUDU_SUURUS)}")
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_x or event.key == pygame.K_q:
+                        run = False
+                    if event.key == pygame.K_c:
+                        # prindib player'i koordinaadid ja maatriksi elemendi (rida, veerg)
+                        #print(vaja_uuendada, blokk_down_timer, blokk_up_timer)
+                        print(f"x: {player.rect.x}, y: {player.rect.y}, maatriks r:{int(player.rect.y / RUUDU_SUURUS)}, v:{int(player.rect.x / RUUDU_SUURUS)}")
+                    if event.key == pygame.K_e:
+                        if mängija_X == 120 and mängija_Y == 90:
+                            lõpp_lõpp = True 
+                    
 
-        pygame.display.update()  # värksendab aknas kuvatavat frame'i
+            pygame.display.update()  # värksendab aknas kuvatavat frame'i
 
-        # pärast määrata muutuja väärtuseks, et liikumine toimuks ühtselt?
-        fpsKell.tick(FPS)  # uuendab 'kella' väärtust
+            # pärast määrata muutuja väärtuseks, et liikumine toimuks ühtselt?
+            fpsKell.tick(FPS)  # uuendab 'kella' väärtust
 
     pygame.quit()
 
