@@ -15,7 +15,7 @@ TODO parandada
 """
 
 RUUDUD = 40  # kui mitmeks ruuduks jagame
-RUUDU_SUURUS = 50  # küljepikkus pikslites
+RUUDU_SUURUS = 30  # küljepikkus pikslites
 PIKKUS = RUUDUD * RUUDU_SUURUS
 LAIUS = PIKKUS
 lahutusvõime = (PIKKUS, LAIUS)
@@ -317,7 +317,7 @@ class Player():
 
         key = pygame.key.get_pressed()
         if (key[pygame.K_w] or key[pygame.K_SPACE]) and self.hüpe is False:
-            self.kiirus_y = -30
+            self.kiirus_y = -20
             self.hüpe = True
             self.maas = False
         # lisasin self.hüpe muutmise collision detecti alla,
