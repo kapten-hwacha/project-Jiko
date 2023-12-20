@@ -34,7 +34,7 @@ blokk_up_timer = False
 temp_blokk_sisu = None
 vana_mees_joonistatud = 0
 start_menu = True
-lõpp_lõpp = False 
+lõpp_lõpp = False
 
 
 class World():
@@ -177,12 +177,12 @@ class World():
             if mängija_Y == self.responsive_blocks_activation_zones_Y[midagi]:
                 rea_kordinaat = midagi.split("//")
                 player_seisab_real = rea_kordinaat[0]
-                #print(player_seisab_real, "rida")
+                # print(player_seisab_real, "rida")
                 for midagi in self.responsive_blocks_activation_zones_X.keys():
                     if mängija_X>self.responsive_blocks_activation_zones_X[midagi][0] and mängija_X<self.responsive_blocks_activation_zones_X[midagi][1]:
                         veeru_kordinaat = midagi.split("//")
                         player_seisab_veerus=veeru_kordinaat[1]
-                        #print(player_seisab_veerus, "veerg")
+                        # print(player_seisab_veerus, "veerg")
                         vaja_uuendada = True
                         player_asukoht = player_seisab_real + "//" + player_seisab_veerus
                         try:
@@ -196,6 +196,7 @@ class World():
             for ruut in self.ruudud_list:
                 if pygame.Rect.colliderect(viiner.rect, ruut[1]):
                     viinerid.pop(viinerid.index(viiner))
+                    break
 
 
 class Taco(World):
@@ -228,9 +229,11 @@ class Taco(World):
                 if pygame.Rect.colliderect(viiner.rect, ruut[1]):
                     viinerid.pop(viinerid.index(viiner))
                     ruut[2] -= 1
+                    break
                     # del viiner
                 if ruut[2] == 0:
                     self.ruudud_list.pop(self.ruudud_list.index(ruut))
+                    break
 
     def tagasta_pilt(self, ruut=None):
         return self.pilt
@@ -261,7 +264,7 @@ class Viiner():
             self.rect.x -= 5
         else:
             self.rect.x += 5
-        if self.rect.x > (LAIUS - RUUDU_SUURUS) or self.rect.x < RUUDU_SUURUS or self.rect.y > (PIKKUS - RUUDU_SUURUS):
+        if self.rect.x > (LAIUS + 200) or self.rect.x < - 200 or self.rect.y > (PIKKUS + 200):
             return 0
         else:
             window.blit(self.pilt, (self.rect.x + blitx, self.rect.y + blity))
@@ -428,6 +431,7 @@ def main():
 
     FPS = 60  # et programm töötaks olenemata riistvarast samasuguselt
     nimi = "Jiko"
+    font_x = pygame.font.SysFont(None, 40)
 
     window = pygame.display.set_mode(lahutusvõime2)
     pygame.display.set_caption(nimi)
@@ -454,6 +458,11 @@ def main():
     player = Player((RUUDU_SUURUS*20, lahutusvõime[0] - (RUUDU_SUURUS*10)))
 
     taco = Taco(maatriks=world_maatriks, pilt="mexico.png")
+
+    # kui tacod on lõpus veel alles
+    taco_sõnum = False
+    taco_tekst = font_x.render("smoke these fools", True, (255, 255, 255))
+    taco_sõnum_lugeja = 0
 
     viinerid = []
 
@@ -488,25 +497,36 @@ def main():
 
             world.joonista()
             taco.flip()
+
             for viiner in viinerid:
                 if viiner.liikumine() == 0:
                     viinerid.pop(viinerid.index(viiner))
                     del viiner
-            Viiner.collision()
 
             player.uuenda()
 
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_x or event.key == pygame.K_q:
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_x:
                         run = False
                     if event.key == pygame.K_c:
                         # prindib player'i koordinaadid ja maatriksi elemendi (rida, veerg)
                         # print(vaja_uuendada, blokk_down_timer, blokk_up_timer)
                         print(f"x: {player.rect.x}, y: {player.rect.y}, maatriks r:{int(player.rect.y / RUUDU_SUURUS)}, v:{int(player.rect.x / RUUDU_SUURUS)}")
                     if event.key == pygame.K_e:
-                        if int(player.rect.y / RUUDU_SUURUS) == 3 and int(player.rect.x / RUUDU_SUURUS) == 4:
+                        if int(player.rect.y / RUUDU_SUURUS) == 3 and int(player.rect.x / RUUDU_SUURUS) == 4 and taco.ruudud_list == []:
                             lõpp_lõpp = True
+                        else:
+                            taco_sõnum = True
+
+            if taco_sõnum is True and taco_sõnum_lugeja < 180:
+                window.blit(taco_tekst, (120, 250))
+                taco_sõnum_lugeja += 1
+            elif taco_sõnum_lugeja == 180:
+                taco_sõnum_lugeja = 0
+                taco_sõnum = False
+
+            Viiner.collision()
 
             pygame.display.update()  # värksendab aknas kuvatavat frame'i
 
